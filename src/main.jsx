@@ -10,7 +10,7 @@ const root = createRoot(document.getElementById('root'));
 
 root.render(
   <StrictMode>
-    <BrowserRouter> {/* Wrap App with BrowserRouter */}
+    <BrowserRouter basename="/didactic-lamp">
       <App />
     </BrowserRouter>
   </StrictMode>,

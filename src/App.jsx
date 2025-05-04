@@ -43,7 +43,7 @@ function App() {
           {/* Left side: Logo + Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <img
-              src="/logo_rim.png"
+              src="logo_rim.png"
               alt="Waylan Digital Solutions Logo"
               className="navbar-logo"
             />
