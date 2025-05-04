@@ -1,0 +1,125 @@
+/* src/App.css */
+
+.App {
+  min-height: 100vh; /* Ensure the App container fills viewport height */
+  display: flex; /* Use flexbox to arrange Nav, Main, Footer */
+  flex-direction: column; /* Stack them vertically */
+  font-family: sans-serif;
+}
+
+/* MODIFIED: Added padding rule */
+.App > main {
+  flex-grow: 1; /* Allows the main section to take up remaining vertical space */
+  padding: 20px; /* Adds padding around the page content area */
+}
+
+/* Style for the navigation logo */
+.navbar-logo {
+  height: 24px;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* Style for the terminal container - AS OVERLAY */
+.terminal-container {
+  /* Positioning */
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+
+  /* Size (adjust as needed) */
+  height: 450px;
+  width: 700px;
+  max-width: 90vw;
+  max-height: 80vh;
+
+  /* Appearance */
+  border: 1px solid #888;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  background-color: #0000AA;
+
+  /* MODIFIED: Added padding and box-sizing */
+  padding: 10px; /* Add space between border and terminal content */
+  box-sizing: border-box; /* Include padding in width/height calculation */
+}
+
+/* Style the div *inside* terminal-container where xterm attaches */
+/* This ensures xterm fills the container's content area */
+.terminal-container > div {
+   width: 100% !important;
+   height: 100% !important;
+   /* box-sizing: border-box; /* Keep this if needed, but often inherited or not necessary here */
+}
+
+/* --- Navbar Base Styles --- */
+.main-nav {
+  /* (Existing styles) */
+}
+
+/* --- Desktop Styles (Default) --- */
+.mobile-menu-button {
+  display: none;
+}
+
+.desktop-nav-links {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-menu {
+  display: none;
+}
+
+/* --- Mobile Styles (e.g., screens below 768px) --- */
+@media (max-width: 768px) {
+  .desktop-nav-links {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    display: block;
+    font-size: 1.5em;
+    padding: 0.2em 0.5em;
+  }
+
+  .mobile-menu {
+    display: block;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: inherit;
+  }
+
+  .mobile-menu.open {
+    max-height: 500px;
+  }
+
+  .mobile-menu ul {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     padding-bottom: 10px;
+  }
+
+   .mobile-menu li {
+     width: 90%;
+     margin-bottom: 5px;
+   }
+
+  .mobile-link.tui-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.tui-window > .tui-panel {
+  padding: 15px; 
+}
+
+
+.tui-window > .tui-title {
+  padding: 5px 15px;
+}
