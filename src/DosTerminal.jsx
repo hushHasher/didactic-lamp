@@ -56,8 +56,8 @@ function DosTerminal() {
                 console.log(`DosTerminal: Fit complete. Size: ${term.cols}x${term.rows}`);
 
                 // Write initial content after fitting
-                term.writeln("WEYLAND CORP [Version 443.0.4.293]");
-                term.writeln("(c) Building Better Worlds");
+                term.writeln("WEYLAND CORP (c) More human than human");
+                term.writeln("[Version 443.0.4.293]");
                 term.writeln("");
                 term.write("C:\\> ");
 
