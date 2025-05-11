@@ -106,7 +106,7 @@ function App() {
 
       {/* --- Footer --- */}
       <footer className="tui-panel" style={{textAlign: 'center', padding: '10px', marginTop: 'auto', flexShrink: 0 }}>
-          (C) 1986 - {new Date().getFullYear()} Weyland Corp - Building Better Worlds Current time: {new Date().toLocaleTimeString()}
+          (C) 1986 - {new Date().getFullYear()} Weyland Corp - Building Better Worlds. Current time: {new Date().toLocaleTimeString()}
       </footer>
       {/* --- End Footer --- */}
 
