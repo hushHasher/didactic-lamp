@@ -56,8 +56,8 @@ function DosTerminal() {
                 console.log(`DosTerminal: Fit complete. Size: ${term.cols}x${term.rows}`);
 
                 // Write initial content after fitting
-                term.writeln("Vector-Dyne Systems Corp [Version 443.0.4.293]");
-                term.writeln("(c) Meridian Data Group. All rights reserved.");
+                term.writeln("WEYLAND CORP [Version 443.0.4.293]");
+                term.writeln("(c) Building Better Worlds");
                 term.writeln("");
                 term.write("C:\\> ");
 
