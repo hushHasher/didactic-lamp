@@ -4,8 +4,8 @@ import React from 'react';
 function ContactPage() {
   // Replace with your actual details
   const email = "r@e.com"; // Replace
-  const linkedInUrl = "https://linkedin.com/"; // Replace
-  const githubUrl = "https://github.com/"; // Replace
+  const linkedInUrl = "https://linkedin.com/d"; // Replace
+  const githubUrl = "https://github.com/d"; // Replace
 
   return (
     <section id="contact" className="tui-window" style={{ marginTop: '20px' }}>

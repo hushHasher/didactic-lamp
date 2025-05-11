@@ -44,11 +44,11 @@ function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <img
               src="logo_rim.png"
-              alt="Waylan Digital Solutions Logo"
+              alt="Weyland Corp Logo"
               className="navbar-logo"
             />
             <Link to="/" className="tui-title" style={{fontSize: '1.1em', textDecoration: 'none', color: 'inherit'}} onClick={closeMobileMenu}>
-             Waylan Digital Solutions
+             WEYLAND CORP
             </Link>
           </div>
 
