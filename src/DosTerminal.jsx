@@ -136,7 +136,7 @@ function DosTerminal(props) {
                        term.writeln('  help          - Displays this help message.');
                        term.writeln('  about         - Navigates to the About section.');
                        term.writeln('  projects      - Navigates to the Projects section.');
-                       term.writeln('  contact       - Navigates to the Contact section.');
+                       // term.writeln('  contact       - Navigates to the Contact section.');
                        term.writeln('  dir           - Lists files and directories.');
                        term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
                        term.writeln('  type <file>   - Displays the content of a file.');
@@ -153,9 +153,6 @@ function DosTerminal(props) {
                      } else if (processedCommand === 'projects') {
                        term.writeln('Navigating to C:\\PROJECTS...');
                        navigate('/projects');
-                     } else if (processedCommand === 'contact') {
-                       term.writeln('Navigating to C:\\CONTACT...');
-                       navigate('/contact');
                      } else if (processedCommand === 'dir') {
                         const entry = getFileSystemEntry(currentPath, fileSystem);
                         if (entry && entry.type === 'directory') {

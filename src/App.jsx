@@ -5,7 +5,6 @@ import DosTerminal from './DosTerminal';
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
-import ContactPage from './pages/ContactPage';
 import './App.css'; // Main layout styles
 
 function App() {
@@ -62,7 +61,7 @@ function App() {
             <li><Link to="/" className="tui-button">Home</Link></li>
             <li><Link to="/about" className="tui-button">About</Link></li>
             <li><Link to="/projects" className="tui-button">Projects</Link></li>
-            <li><Link to="/contact" className="tui-button">Contact</Link></li>
+            {/* <li><Link to="/contact" className="tui-button">Contact</Link></li> */}
             <li>
               <button className="tui-button" onClick={toggleTerminal} aria-pressed={showTerminal}>
                 {showTerminal ? 'CLI [X]' : 'CLI [_]'}
@@ -77,7 +76,7 @@ function App() {
             <li><Link to="/" className="tui-button mobile-link" onClick={closeMobileMenu}>Home</Link></li>
             <li><Link to="/about" className="tui-button mobile-link" onClick={closeMobileMenu}>About</Link></li>
             <li><Link to="/projects" className="tui-button mobile-link" onClick={closeMobileMenu}>Projects</Link></li>
-            <li><Link to="/contact" className="tui-button mobile-link" onClick={closeMobileMenu}>Contact</Link></li>
+            {/* <li><Link to="/contact" className="tui-button mobile-link" onClick={closeMobileMenu}>Contact</Link></li> */}
             <li>
               <button className="tui-button mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
                 {showTerminal ? 'Close CLI' : 'Launch CLI'}
@@ -97,7 +96,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+          {/* <Route path="/contact" element={<ContactPage />} /> */}
           {/* <Route path="*" element={<div>404 - Page Not Found</div>} /> */}
         </Routes>
         {/* --- End Page Routes --- */}
