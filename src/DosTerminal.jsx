@@ -8,6 +8,9 @@ import '@xterm/xterm/css/xterm.css';
 // --- Define the Fake File System ---
 const fileSystem = {
   'C:': {
+    type: 'directory',
+    date: '01-01-80',
+    time: '12:00AM',
     'AUTOEXEC.BAT': { type: 'file', content: '@ECHO OFF\nPROMPT $P$G\nPATH C:\\DOS;C:\\WINDOWS;C:\\UTILS\nLH MOUSE.COM\nLH SMARTDRV.EXE\nWIN', date: '07-22-94', time: '10:30AM', size: 128 },
     'CONFIG.SYS': { type: 'file', content: 'DEVICE=C:\\DOS\\HIMEM.SYS\nDEVICE=C:\\DOS\\EMM386.EXE NOEMS\nDOS=HIGH,UMB\nFILES=40\nBUFFERS=20\nSTACKS=9,256', date: '07-20-94', time: '09:15AM', size: 96 },
     'COMMAND.COM': { type: 'file', content: 'MS-DOS Command Interpreter Version 6.22', date: '05-31-94', time: '06:22AM', size: 54649 },
@@ -357,8 +360,8 @@ function DosTerminal(props) {
                      } else if (processedCommand === 'dir') {
                         const dirToList = getFileSystemEntry(currentPath, fileSystem);
 
-                        // Check if dirToList is the C: root object OR a subdirectory with children
-                        if (dirToList && (currentPath.toUpperCase() === 'C:\\' || dirToList.type === 'directory')) {
+                        // Simplified check now works for root too, thanks to type: 'directory' on C:
+                        if (dirToList && dirToList.type === 'directory') {
                             term.writeln(` Volume in drive C is WEYLAND_OS`);
                             term.writeln(` Volume Serial Number is 1986-0426`);
                             term.writeln(` Directory of ${currentPath.toUpperCase()}`);
@@ -378,107 +381,101 @@ function DosTerminal(props) {
                             
                             const padLeft = (str, len) => String(str).padStart(len, ' ');
 
-                            // Determine the children to iterate over
-                            // For C:\, children are the direct properties of the C: object.
-                            // For subdirectories, children are in the .children property.
-                            const childrenToList = (currentPath.toUpperCase() === 'C:\\') ? dirToList : dirToList.children;
+                            // Determine the children to iterate over.
+                            // For C:\, children are direct properties. Use Object.keys filtered.
+                            // For subdirs, children are in the .children property.
+                            const childrenContainer = dirToList.children || dirToList;
+                            const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children'); // Filter out metadata keys
 
+                            // Always show '.' and '..' for subdirectories
                             if (currentPath.toUpperCase() !== 'C:\\') {
-                                // For subdirectories, use its own date/time for . and ..
                                 const selfDirDate = dirToList.date || '01-01-80';
                                 const selfDirTime = dirToList.time || '12:00AM';
                                 term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
-                                term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`); // Ideally get parent's date/time
-                                totalDirs +=2;
+                                // Ideally get parent's date/time for '..'
+                                // For simplicity, using self's date/time for now.
+                                term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`);
+                                totalDirs += 2;
                             }
-                            
-                            if (childrenToList) { // Ensure childrenToList is not null/undefined
-                                Object.entries(childrenToList).forEach(([name, item]) => {
-                                    // Skip 'type', 'date', 'time' properties if they exist at the C: root level
-                                    if (currentPath.toUpperCase() === 'C:\\' && (name === 'type' || name === 'date' || name === 'time')) {
-                                        return;
-                                    }
-                                    // Also skip 'children' property if we are listing a subdirectory that has its own children property.
-                                    // The children are listed through the loop, not the 'children' key itself.
-                                    if (dirToList.type === 'directory' && name === 'children'){
-                                        return;
-                                    }
 
+                            keysToList.forEach(name => {
+                                const item = childrenContainer[name];
+                                const itemName = name.toUpperCase(); // Use the key as name
+                                const itemDate = item.date || '01-01-80';
+                                const itemTime = item.time || '12:00AM';
 
-                                    const itemName = name.toUpperCase();
-                                    const itemDate = item.date || '01-01-80';
-                                    const itemTime = item.time || '12:00AM';
+                                if (item.type === 'directory') {
+                                    term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
+                                    totalDirs++;
+                                } else if (item.type === 'file') {
+                                    const itemSize = item.size || 0;
+                                    term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
+                                    totalFiles++;
+                                    totalBytes += itemSize;
+                                }
+                                // Ignore entries without a 'type'
+                            });
 
-                                    if (item.type === 'directory') {
-                                        term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
-                                        totalDirs++;
-                                    } else if (item.type === 'file') { // Explicitly check for file type
-                                        const itemSize = item.size || 0;
-                                        term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
-                                        totalFiles++;
-                                        totalBytes += itemSize;
-                                    }
-                                });
-                            }
                             term.writeln('');
                             term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
                             const fakeBytesFree = 512 * 1024 * 1024;
                             term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
                         } else {
-                            term.writeln('Invalid path.');
+                            term.writeln('Invalid path.'); // Should be less likely now
                         }
                      } else if (processedCommand === 'cd') {
                         const targetDirRaw = args.join(' ').trim();
 
                         if (!targetDirRaw) {
-                          term.writeln(currentPath.toUpperCase()); // Just show current path
+                          term.writeln(currentPath.toUpperCase());
                         } else {
                           const targetDir = targetDirRaw.toUpperCase();
                           let potentialNewPath;
 
                           if (targetDir === '..') {
-                            // Handle "cd .."
                             const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
                             if (parts.length > 0) {
                               parts.pop(); // Go up one level
                               potentialNewPath = 'C:\\' + parts.join('\\');
-                               // Add trailing slash only if not back at root C:\
                               if (parts.length > 0) {
                                   potentialNewPath += '\\';
+                              } else {
+                                 potentialNewPath = 'C:\\'; // Ensure it's exactly C:\ if parts is empty
                               }
                             } else {
-                              potentialNewPath = 'C:\\'; // Already at root, stay at root
+                              potentialNewPath = 'C:\\';
                             }
                           } else if (targetDir.startsWith('C:\\')) {
-                            // Handle absolute path C:\...
                             potentialNewPath = targetDir;
-                             // Ensure trailing slash for directories (normalize)
-                            if (!potentialNewPath.endsWith('\\')) {
+                            if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') { // Don't add slash if it *is* C:
                                 potentialNewPath += '\\';
                             }
+                            if (potentialNewPath.toUpperCase() === 'C:') { // Normalize C: to C:\
+                               potentialNewPath = 'C:\\';
+                            }
                           } else {
-                            // Handle relative path e.g., "WINDOWS" or "FOLDER\SUBFOLDER"
                             const basePath = currentPath.toUpperCase() === 'C:\\' ? currentPath : (currentPath.endsWith('\\') ? currentPath : currentPath + '\\');
                             potentialNewPath = basePath + targetDir;
-                             // Ensure trailing slash for directories (normalize)
                             if (!potentialNewPath.endsWith('\\')) {
                                 potentialNewPath += '\\';
                             }
                           }
 
-                          // Normalize edge case C: -> C:\
+                          // Normalize edge case C: -> C:\ (redundant maybe, but safe)
                           if (potentialNewPath.toUpperCase() === 'C:') {
                               potentialNewPath = 'C:\\';
                           }
 
                           // Final check: Does the target directory exist?
+                          console.log(`CD checking path: "${potentialNewPath}"`); // Add log before check
                           const entry = getFileSystemEntry(potentialNewPath, fileSystem);
 
+                          // Simple check now works for root and subdirs
                           if (entry && entry.type === 'directory') {
-                            currentPath = potentialNewPath.toUpperCase(); // Update path state
+                            currentPath = potentialNewPath.toUpperCase();
                           } else {
                             term.writeln('Invalid directory');
-                            console.log(`CD command failed check for path: "${potentialNewPath}"`); // Log failure
+                            console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry); // Log failure details
                           }
                         }
                      } else if (processedCommand === 'type') {
@@ -486,23 +483,22 @@ function DosTerminal(props) {
                         if (!fileName) {
                             term.writeln('Usage: TYPE <filename>');
                         } else {
-                            // Get the *current* directory's entry first
                             const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
                             let fileEntry = null;
 
-                            // Check if current directory is valid and has children
-                            if (currentDirEntry && currentDirEntry.type === 'directory' && currentDirEntry.children) {
-                                fileEntry = currentDirEntry.children[fileName];
+                            // Use the correct source for children (direct properties for C:, .children for subdirs)
+                            const childrenSource = currentDirEntry?.children || currentDirEntry;
+
+                            if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
+                               fileEntry = childrenSource[fileName];
                             }
 
-                            // Now check if the fileEntry exists and is a file
                             if (fileEntry && fileEntry.type === 'file') {
-                                const lines = fileEntry.content.split('\n');
-                                lines.forEach(line => term.writeln(line));
+                              const lines = fileEntry.content.split('\n');
+                              lines.forEach(line => term.writeln(line));
                             } else if (fileEntry && fileEntry.type === 'directory') {
-                              term.writeln(`Access denied - ${fileName} is a directory.`);
-                            }
-                            else {
+                                term.writeln(`Access denied - ${fileName} is a directory.`);
+                            } else {
                                 term.writeln(`File not found - ${fileName}`);
                             }
                         }
