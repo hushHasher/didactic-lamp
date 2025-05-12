@@ -53,62 +53,81 @@ const fileSystem = {
 
 // Helper function to navigate the file system object
 function getFileSystemEntry(path, fs) {
-  console.log(`getFileSystemEntry searching for: "${path}"`); // Log input
-  const parts = path.toUpperCase().split('\\').filter(p => p); // C:, SYSTEM, DRIVERS
-  console.log(`  Parsed parts:`, parts);
+  console.log(`[GFS] Searching for: "${path}"`); // Add prefix for clarity
+  const parts = path.toUpperCase().split('\\').filter(p => p);
+  console.log(`[GFS] Parsed parts:`, parts);
 
   if (parts.length === 0) {
-      console.log("  Error: No parts after parsing.");
-      return null; // Empty path or invalid characters only
+    console.log("[GFS] Error: No parts after parsing.");
+    return null;
   }
 
-  // Explicitly handle the root drive request (e.g., "C:\" or "C:")
+  // Handle root explicitly first ('C:' or 'C:\')
   if (parts.length === 1 && parts[0] === 'C:') {
-      if (fs['C:']) {
-          console.log("  Success: Returning root C: entry.");
-          return fs['C:'];
-      } else {
-          console.log("  Error: C: entry not found in filesystem root.");
-          return null;
-      }
-  }
-
-  // All valid non-root paths must start with C:
-  if (parts[0] !== 'C:') {
-      console.log("  Error: Path does not start with C:");
-      return null;
-  }
-
-  let currentLevel = fs['C:']; // Start at the C: object
-  if (!currentLevel) {
-      console.log("  Error: C: object not found in filesystem root.");
-      return null;
-  }
-
-  // Iterate through path components *after* C:
-  for (let i = 1; i < parts.length; i++) {
-    const partName = parts[i]; // Already uppercased from split
-    console.log(`  Traversing to part: "${partName}"`);
-
-    // Check if current level is a directory and has children
-    if (currentLevel && currentLevel.type === 'directory' && currentLevel.children) {
-      // Check if the next part exists within the children
-      if (currentLevel.children[partName]) {
-        currentLevel = currentLevel.children[partName];
-        console.log(`    Found part "${partName}". New level type: ${currentLevel?.type}`);
-      } else {
-        console.log(`    Error: Part "${partName}" not found in children of directory.`);
-        return null; // Specific part not found
-      }
+    if (fs['C:'] && fs['C:'].type === 'directory') {
+      console.log("[GFS] Success: Returning root C: entry.");
+      return fs['C:']; // Return the C: object itself
     } else {
-      console.log(`    Error: Cannot traverse into "${partName}". Parent is not a directory or has no children.`);
-      console.log(`    Parent details: Type=${currentLevel?.type}, HasChildren=${!!currentLevel?.children}`);
-      return null; // Tried to 'cd' into a file or non-existent parent child structure
+      console.log("[GFS] Error: C: entry not found or not a directory in filesystem root.");
+      return null;
     }
   }
 
-  console.log(`  Success: Returning final entry for "${path}"`, currentLevel);
-  return currentLevel;
+  // Check starting point is C:
+  if (parts[0] !== 'C:') {
+    console.log("[GFS] Error: Path does not start with C:");
+    return null;
+  }
+
+  let currentLevel = fs['C:']; // Start at the C: object
+  if (!currentLevel || currentLevel.type !== 'directory') {
+    console.log("[GFS] Error: C: object not found or not a directory at start.");
+    return null;
+  }
+
+  // Iterate through path components *after* C: (i starts at 1)
+  for (let i = 1; i < parts.length; i++) {
+    const partName = parts[i];
+    console.log(`[GFS] Traversing to part ${i}: "${partName}"`);
+
+    // Determine where to look for the next partName
+    // If the currentLevel *is* the root object (fs['C:']), look directly within its properties.
+    // Otherwise (if currentLevel is a subdirectory object), look within its 'children' property.
+    const childrenSource = (currentLevel === fs['C:']) ? currentLevel : currentLevel.children;
+
+    console.log(`[GFS]   CurrentLevel is root? ${currentLevel === fs['C:']}. Part name: ${partName}`);
+    
+    // Ensure childrenSource exists (especially important for subdirs that might lack a 'children' property)
+    if (!childrenSource) {
+        console.log(`[GFS]   Error: No children source found for current level.`);
+        return null;
+    }
+
+    // Check if the part exists as a key in the correct source
+    if (childrenSource.hasOwnProperty(partName)) { // Use hasOwnProperty for safety
+      currentLevel = childrenSource[partName];
+      console.log(`[GFS]   Found part "${partName}". New level type: ${currentLevel?.type}`);
+
+      // If this is an *intermediate* part of the path, it *must* be a directory to continue.
+      // We check this only if we are not at the last part (i < parts.length - 1).
+      if (i < parts.length - 1) {
+          if (!currentLevel || currentLevel.type !== 'directory') {
+            console.log(`[GFS]   Error: Intermediate part "${partName}" is not a directory.`);
+            return null; // Cannot traverse further through a file or invalid entry
+          }
+      }
+      // If it's the last part, we don't care about the type here; we just return what we found.
+      // The calling function (e.g., 'cd' or 'type') will validate the type if needed.
+
+    } else {
+      console.log(`[GFS]   Error: Part "${partName}" not found in children source.`);
+      // console.log(`[GFS]   Children source keys:`, Object.keys(childrenSource)); // Log keys for debugging
+      return null; // Specific part not found
+    }
+  }
+
+  console.log(`[GFS] Success: Returning final entry for "${path}" of type ${currentLevel?.type}`, currentLevel);
+  return currentLevel; // Return the final entry found (could be file or directory)
 }
 
 function DosTerminal(props) {
