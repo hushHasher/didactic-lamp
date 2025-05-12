@@ -50,19 +50,61 @@ const fileSystem = {
 
 // Helper function to navigate the file system object
 function getFileSystemEntry(path, fs) {
+  console.log(`getFileSystemEntry searching for: "${path}"`); // Log input
   const parts = path.toUpperCase().split('\\').filter(p => p); // C:, SYSTEM, DRIVERS
-  if (parts.length === 0 || parts[0] !== 'C:') return null; // Must start with C:
+  console.log(`  Parsed parts:`, parts);
 
-  let currentLevel = fs[parts[0]];
-  if (!currentLevel) return null;
+  if (parts.length === 0) {
+      console.log("  Error: No parts after parsing.");
+      return null; // Empty path or invalid characters only
+  }
 
+  // Explicitly handle the root drive request (e.g., "C:\" or "C:")
+  if (parts.length === 1 && parts[0] === 'C:') {
+      if (fs['C:']) {
+          console.log("  Success: Returning root C: entry.");
+          return fs['C:'];
+      } else {
+          console.log("  Error: C: entry not found in filesystem root.");
+          return null;
+      }
+  }
+
+  // All valid non-root paths must start with C:
+  if (parts[0] !== 'C:') {
+      console.log("  Error: Path does not start with C:");
+      return null;
+  }
+
+  let currentLevel = fs['C:']; // Start at the C: object
+  if (!currentLevel) {
+      console.log("  Error: C: object not found in filesystem root.");
+      return null;
+  }
+
+  // Iterate through path components *after* C:
   for (let i = 1; i < parts.length; i++) {
-    if (currentLevel && currentLevel.type === 'directory' && currentLevel.children && currentLevel.children[parts[i].toUpperCase()]) {
-      currentLevel = currentLevel.children[parts[i].toUpperCase()];
+    const partName = parts[i]; // Already uppercased from split
+    console.log(`  Traversing to part: "${partName}"`);
+
+    // Check if current level is a directory and has children
+    if (currentLevel && currentLevel.type === 'directory' && currentLevel.children) {
+      // Check if the next part exists within the children
+      if (currentLevel.children[partName]) {
+        currentLevel = currentLevel.children[partName];
+        console.log(`    Found part "${partName}". New level type: ${currentLevel?.type}`);
+      } else {
+        console.log(`    Error: Part "${partName}" not found in children of directory.`);
+        return null; // Specific part not found
+      }
     } else {
-      return null; // Path not found or not a directory
+      console.log(`    Error: Cannot traverse into "${partName}". Parent is not a directory or has no children.`);
+      console.log(`    Parent details: Type=${currentLevel?.type}, HasChildren=${!!currentLevel?.children}`);
+      return null; // Tried to 'cd' into a file or non-existent parent child structure
     }
   }
+
+  console.log(`  Success: Returning final entry for "${path}"`, currentLevel);
   return currentLevel;
 }
 
@@ -387,54 +429,81 @@ function DosTerminal(props) {
                         }
                      } else if (processedCommand === 'cd') {
                         const targetDirRaw = args.join(' ').trim();
-                        const targetDir = targetDirRaw.toUpperCase();
 
                         if (!targetDirRaw) {
-                            term.writeln(currentPath.toUpperCase());
-                        } else if (targetDir === '..') {
+                          term.writeln(currentPath.toUpperCase()); // Just show current path
+                        } else {
+                          const targetDir = targetDirRaw.toUpperCase();
+                          let potentialNewPath;
+
+                          if (targetDir === '..') {
+                            // Handle "cd .."
                             const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
                             if (parts.length > 0) {
-                                parts.pop();
-                                currentPath = 'C:\\' + parts.join('\\') + (parts.length > 0 ? '\\' : '');
+                              parts.pop(); // Go up one level
+                              potentialNewPath = 'C:\\' + parts.join('\\');
+                               // Add trailing slash only if not back at root C:\
+                              if (parts.length > 0) {
+                                  potentialNewPath += '\\';
+                              }
                             } else {
-                                currentPath = 'C:\\';
+                              potentialNewPath = 'C:\\'; // Already at root, stay at root
                             }
-                        } else {
-                            let newPath;
-                            if (targetDir.startsWith('C:\\')) {
-                                newPath = targetDir;
-                            } else {
-                                newPath = (currentPath.endsWith('\\') ? currentPath : currentPath + '\\') + targetDir;
+                          } else if (targetDir.startsWith('C:\\')) {
+                            // Handle absolute path C:\...
+                            potentialNewPath = targetDir;
+                             // Ensure trailing slash for directories (normalize)
+                            if (!potentialNewPath.endsWith('\\')) {
+                                potentialNewPath += '\\';
                             }
-                            if (!newPath.endsWith('\\') && newPath.toUpperCase() !== 'C:') {
-                                newPath += '\\';
-                            } else if (newPath.toUpperCase() === 'C:') {
-                                newPath = 'C:\\';
+                          } else {
+                            // Handle relative path e.g., "WINDOWS" or "FOLDER\SUBFOLDER"
+                            const basePath = currentPath.toUpperCase() === 'C:\\' ? currentPath : (currentPath.endsWith('\\') ? currentPath : currentPath + '\\');
+                            potentialNewPath = basePath + targetDir;
+                             // Ensure trailing slash for directories (normalize)
+                            if (!potentialNewPath.endsWith('\\')) {
+                                potentialNewPath += '\\';
                             }
+                          }
 
-                            const entry = getFileSystemEntry(newPath, fileSystem);
-                            if (entry && entry.type === 'directory') {
-                                currentPath = newPath.toUpperCase();
-                            } else {
-                                term.writeln('Directory not found or invalid path.');
-                            }
+                          // Normalize edge case C: -> C:\
+                          if (potentialNewPath.toUpperCase() === 'C:') {
+                              potentialNewPath = 'C:\\';
+                          }
+
+                          // Final check: Does the target directory exist?
+                          const entry = getFileSystemEntry(potentialNewPath, fileSystem);
+
+                          if (entry && entry.type === 'directory') {
+                            currentPath = potentialNewPath.toUpperCase(); // Update path state
+                          } else {
+                            term.writeln('Invalid directory');
+                            console.log(`CD command failed check for path: "${potentialNewPath}"`); // Log failure
+                          }
                         }
                      } else if (processedCommand === 'type') {
                         const fileName = args.join(' ').trim().toUpperCase();
                         if (!fileName) {
                             term.writeln('Usage: TYPE <filename>');
                         } else {
+                            // Get the *current* directory's entry first
                             const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
-                            if (currentDirEntry && currentDirEntry.type === 'directory' && currentDirEntry.children[fileName]) {
-                                const fileEntry = currentDirEntry.children[fileName];
-                                if (fileEntry.type === 'file') {
-                                    const lines = fileEntry.content.split('\n');
-                                    lines.forEach(line => term.writeln(line));
-                                } else {
-                                    term.writeln(`Cannot TYPE a directory: ${fileName}`);
-                                }
-                            } else {
-                                term.writeln(`File not found: ${fileName}`);
+                            let fileEntry = null;
+
+                            // Check if current directory is valid and has children
+                            if (currentDirEntry && currentDirEntry.type === 'directory' && currentDirEntry.children) {
+                                fileEntry = currentDirEntry.children[fileName];
+                            }
+
+                            // Now check if the fileEntry exists and is a file
+                            if (fileEntry && fileEntry.type === 'file') {
+                                const lines = fileEntry.content.split('\n');
+                                lines.forEach(line => term.writeln(line));
+                            } else if (fileEntry && fileEntry.type === 'directory') {
+                              term.writeln(`Access denied - ${fileName} is a directory.`);
+                            }
+                            else {
+                                term.writeln(`File not found - ${fileName}`);
                             }
                         }
                      } else if (processedCommand !== '') {
