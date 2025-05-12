@@ -3,6 +3,8 @@ import React from 'react';
 import useTypewriter from '../hooks/useTypewriter'; // Import the hook
 
 function AboutPage() {
+  const pageKey = 'visits_about'; // Unique key
+
   // Define the full text for the paragraphs
   const accessText = "> ACCESSING ARCHIVAL DATA ON SYSTEM PRIME OPERATOR...";
   const decryptText = "> DECRYPTION LEVEL: SUFFICIENT";
@@ -12,29 +14,29 @@ function AboutPage() {
   const para4Text = "The core directive remains consistent: Explore. Create. Evolve.";
   const endText = "> END OF FILE. C:\\SYSTEM\\LOGS> _";
 
-  // Apply the hook
-  const typedAccess = useTypewriter(accessText, 30);
-  const typedDecrypt = useTypewriter(decryptText, 30);
-  const typedPara1 = useTypewriter(para1Text, 20);
-  const typedPara2 = useTypewriter(para2Text, 25);
-  const typedPara3 = useTypewriter(para3Text, 20);
-  const typedPara4 = useTypewriter(para4Text, 40);
-  const typedEnd = useTypewriter(endText, 30);
+  // Pass pageKey (can use suffixes or just one key per page if order doesn't matter)
+  const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
+  const typedDecrypt = useTypewriter(decryptText, 30, `${pageKey}_decrypt`);
+  const typedPara1 = useTypewriter(para1Text, 20, `${pageKey}_p1`);
+  const typedPara2 = useTypewriter(para2Text, 25, `${pageKey}_p2`);
+  const typedPara3 = useTypewriter(para3Text, 20, `${pageKey}_p3`);
+  const typedPara4 = useTypewriter(para4Text, 40, `${pageKey}_p4`);
+  const typedEnd = useTypewriter(endText, 30, `${pageKey}_end`);
 
 
   return (
     <section id="about" className="tui-window" style={{ marginTop: '20px' }}>
        <h2 className="tui-title">C:\SYSTEM\LOGS\OPERATOR_PROFILE.TXT</h2>
        <div className="tui-panel">
-         <p>{typedAccess}{typedAccess.length < accessText.length ? '_' : ''}</p>
-         <p>{typedDecrypt}{typedDecrypt.length < decryptText.length ? '_' : ''}</p>
+         <p>{typedAccess}{typedAccess !== accessText ? '_' : ''}</p>
+         <p>{typedDecrypt}{typedDecrypt !== decryptText ? '_' : ''}</p>
          <p>----------------------------------------------------------------------</p>
-         <p>{typedPara1}{typedPara1.length < para1Text.length ? '_' : ''}</p>
-         <p>{typedPara2}{typedPara2.length < para2Text.length ? '_' : ''}</p>
-         <p>{typedPara3}{typedPara3.length < para3Text.length ? '_' : ''}</p>
-         <p>{typedPara4}{typedPara4.length < para4Text.length ? '_' : ''}</p>
+         <p>{typedPara1}{typedPara1 !== para1Text ? '_' : ''}</p>
+         <p>{typedPara2}{typedPara2 !== para2Text ? '_' : ''}</p>
+         <p>{typedPara3}{typedPara3 !== para3Text ? '_' : ''}</p>
+         <p>{typedPara4}{typedPara4 !== para4Text ? '_' : ''}</p>
          <p>----------------------------------------------------------------------</p>
-         <p>{typedEnd}{typedEnd.length < endText.length ? '' : ''}</p> {/* No cursor on final prompt */}
+         <p>{typedEnd}{typedEnd !== endText ? '_' : ''}</p>
        </div>
     </section>
   );
