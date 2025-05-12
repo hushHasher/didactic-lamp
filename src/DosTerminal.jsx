@@ -104,16 +104,15 @@ function DosTerminal(props) {
                 fitAddon.fit(); // Calculate and apply size
                 console.log(`DosTerminal: Fit complete. Size: ${term.cols}x${term.rows}`);
 
-                // Write initial content after fitting
+                // Initialize these *before* first use for the prompt
+                let currentCommand = '';
+                let currentPath = 'C:\\'; 
+
                 term.writeln("WEYLAND CORP (c) More human than human");
                 term.writeln("[Version 443.0.4.293]");
                 term.writeln("");
                 term.writeln("Type 'help' for a list of available commands.");
                 term.write(`${currentPath.toUpperCase()}> `); // Initial prompt with path
-
-                // --- Input Handling ---
-                let currentCommand = '';
-                let currentPath = 'C:\\'; // Initialize current path
 
                 const updatePrompt = () => {
                   term.write(`\r\n${currentPath.toUpperCase()}> `);
@@ -186,35 +185,40 @@ function DosTerminal(props) {
                             term.writeln('Invalid path.');
                         }
                      } else if (processedCommand === 'cd') {
-                        const targetDir = args.join(' ').trim();
-                        if (!targetDir) {
-                            term.writeln(currentPath.toUpperCase()); // 'cd' with no args shows current path
+                        const targetDirRaw = args.join(' ').trim(); // Keep original case for display if needed, but process as upper
+                        const targetDir = targetDirRaw.toUpperCase();
+
+                        if (!targetDirRaw) { // Check raw for emptiness
+                            term.writeln(currentPath.toUpperCase());
                         } else if (targetDir === '..') {
-                            // Go up one level
-                            const parts = currentPath.toUpperCase().split('\\').filter(p => p);
-                            if (parts.length > 1) { // Can't go up from C:\
+                            const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:'); // Handle C:\ better
+                            if (parts.length > 0) {
                                 parts.pop();
-                                currentPath = parts.join('\\') + '\\';
-                                if (parts.length === 1 && parts[0] === 'C:') currentPath = 'C:\\'; // ensure C:\
+                                currentPath = 'C:\\' + parts.join('\\') + (parts.length > 0 ? '\\' : '');
+                            } else { // Already at C:\ or malformed
+                                currentPath = 'C:\\';
                             }
                         } else {
-                            // Navigate to subdirectory or absolute path
                             let newPath;
-                            if (targetDir.toUpperCase().startsWith('C:\\')) { // Absolute path
+                            if (targetDir.startsWith('C:\\')) {
                                 newPath = targetDir;
-                                if (!newPath.endsWith('\\')) newPath += '\\';
-                            } else { // Relative path
-                                newPath = currentPath + targetDir + '\\';
+                            } else {
+                                newPath = (currentPath.endsWith('\\') ? currentPath : currentPath + '\\') + targetDir;
+                            }
+                            // Ensure newPath ends with a backslash if it's not C:\
+                            if (!newPath.endsWith('\\') && newPath.toUpperCase() !== 'C:') {
+                                newPath += '\\';
+                            } else if (newPath.toUpperCase() === 'C:') {
+                                newPath = 'C:\\'; // Normalize C:
                             }
 
                             const entry = getFileSystemEntry(newPath, fileSystem);
                             if (entry && entry.type === 'directory') {
-                                currentPath = newPath;
+                                currentPath = newPath.toUpperCase(); // Store path in uppercase
                             } else {
                                 term.writeln('Directory not found or invalid path.');
                             }
                         }
-
                      } else if (processedCommand === 'type') {
                         const fileName = args.join(' ').trim().toUpperCase();
                         if (!fileName) {
@@ -241,7 +245,8 @@ function DosTerminal(props) {
                      currentCommand = ''; // Reset command buffer
                      updatePrompt(); // Update prompt with new path if changed
                   } else if (domEvent.key === 'Backspace') {
-                     if (currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) { // +2 for '> '
+                     // Ensure currentPath is defined and cursor is beyond the prompt
+                     if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
                        domEvent.preventDefault();
                        term.write('\b \b');
                        currentCommand = currentCommand.slice(0, -1);
