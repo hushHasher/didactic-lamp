@@ -113,8 +113,7 @@ function App() {
       {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
       {showTerminal && (
         <div className="terminal-container">
-          {/* The padding is now handled by CSS on terminal-container */}
-          <DosTerminal />
+          <DosTerminal onClose={toggleTerminal} />
         </div>
       )}
 
