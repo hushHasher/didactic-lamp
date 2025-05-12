@@ -1,5 +1,5 @@
 // src/App.jsx - Padding adjustments
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Link } from 'react-router-dom'; // Import Router components
 import DosTerminal from './DosTerminal';
 import HomePage from './pages/HomePage'; // Import page components
@@ -14,25 +14,30 @@ function App() {
   // State for Mobile Menu Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const toggleTerminal = () => {
+  // Wrap toggleTerminal with useCallback to give it a stable identity
+  const toggleTerminal = useCallback(() => {
     setShowTerminal(prevState => !prevState);
-  };
+    // No dependencies needed inside useCallback's array, as it only uses setShowTerminal
+    // which is guaranteed stable by React.
+  }, []); // Empty dependency array means the function reference never changes
 
   // Handler to toggle mobile menu
-  const toggleMobileMenu = () => {
+  const toggleMobileMenu = useCallback(() => { // Also good practice to wrap this
     setIsMobileMenuOpen(prevState => !prevState);
-  };
+  }, []);
 
   // Function to close mobile menu (used by links)
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => { // And this
     setIsMobileMenuOpen(false);
-  }
+  }, []);
 
   // Function to handle CLI toggle from mobile menu
-  const toggleTerminalAndMenu = () => {
+  const toggleTerminalAndMenu = useCallback(() => { // And this
+    // Make sure toggleTerminal is stable before calling it here
     toggleTerminal();
     closeMobileMenu();
-  }
+     // Depends on toggleTerminal and closeMobileMenu, which are now stable
+  }, [toggleTerminal, closeMobileMenu]);
 
   return (
     <div className="App"> {/* Main layout container */}
@@ -47,12 +52,14 @@ function App() {
               alt="Weyland Corp Logo"
               className="navbar-logo"
             />
+            {/* Use stable closeMobileMenu */}
             <Link to="/" className="tui-title" style={{fontSize: '1.1em', textDecoration: 'none', color: 'inherit'}} onClick={closeMobileMenu}>
              WEYLAND CORP
             </Link>
           </div>
 
           {/* Hamburger Button (Mobile Only - controlled by CSS) */}
+          {/* Use stable toggleMobileMenu */}
           <button className="tui-button mobile-menu-button" onClick={toggleMobileMenu} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
             ☰
           </button>
@@ -64,6 +71,7 @@ function App() {
             <li><Link to="/projects" className="tui-button">Projects</Link></li>
             {/* <li><Link to="/contact" className="tui-button">Contact</Link></li> */}
             <li>
+              {/* Use stable toggleTerminal */}
               <button className="tui-button" onClick={toggleTerminal} aria-pressed={showTerminal}>
                 {showTerminal ? 'CLI [X]' : 'CLI [_]'}
               </button>
@@ -79,6 +87,7 @@ function App() {
             <li><Link to="/projects" className="tui-button mobile-link" onClick={closeMobileMenu}>Projects</Link></li>
             {/* <li><Link to="/contact" className="tui-button mobile-link" onClick={closeMobileMenu}>Contact</Link></li> */}
             <li>
+              {/* Use stable toggleTerminalAndMenu */}
               <button className="tui-button mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
                 {showTerminal ? 'Close CLI' : 'Launch CLI'}
               </button>
