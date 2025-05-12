@@ -8,29 +8,43 @@ import '@xterm/xterm/css/xterm.css';
 // --- Define the Fake File System ---
 const fileSystem = {
   'C:': {
-    'SYSTEM': {
+    'AUTOEXEC.BAT': { type: 'file', content: '@ECHO OFF\nPROMPT $P$G\nPATH C:\\DOS;C:\\WINDOWS;C:\\UTILS\nLH MOUSE.COM\nLH SMARTDRV.EXE\nWIN', date: '07-22-94', time: '10:30AM', size: 128 },
+    'CONFIG.SYS': { type: 'file', content: 'DEVICE=C:\\DOS\\HIMEM.SYS\nDEVICE=C:\\DOS\\EMM386.EXE NOEMS\nDOS=HIGH,UMB\nFILES=40\nBUFFERS=20\nSTACKS=9,256', date: '07-20-94', time: '09:15AM', size: 96 },
+    'COMMAND.COM': { type: 'file', content: 'MS-DOS Command Interpreter Version 6.22', date: '05-31-94', time: '06:22AM', size: 54649 },
+    'MOUSE.COM': { type: 'file', content: 'Generic Mouse Driver', date: '01-15-93', time: '12:00PM', size: 15230 },
+    'DOS': {
       type: 'directory',
+      date: '06-10-94', time: '02:00PM',
       children: {
-        'CONFIG.SYS': { type: 'file', content: 'DEVICE=C:\\SYSTEM\\DRIVERS\\BIOS.SYS\nBUFFERS=20\nFILES=40' },
-        'AUTOEXEC.BAT': { type: 'file', content: '@ECHO OFF\nPROMPT $P$G\nPATH C:\\SYSTEM;C:\\UTILS\nECHO Weyland Corp OS Initialized.' },
-        'DRIVERS': {
-          type: 'directory',
-          children: {
-            'BIOS.SYS': { type: 'file', content: 'BIOS Version 8.01. WC Internal.' },
-            'NETWORK.SYS': { type: 'file', content: 'Network Interface Driver. Status: Connected.' }
-          }
-        }
+        'HIMEM.SYS': { type: 'file', content: 'Extended Memory Manager', date: '05-31-94', time: '06:22AM', size: 45056 },
+        'EMM386.EXE': { type: 'file', content: 'Expanded Memory Manager', date: '05-31-94', time: '06:22AM', size: 121427 },
+        'FORMAT.COM': { type: 'file', content: 'Format Utility', date: '05-31-94', time: '06:22AM', size: 22912 },
+        'EDIT.COM': { type: 'file', content: 'MS-DOS Editor', date: '05-31-94', time: '06:22AM', size: 413 },
       }
     },
-    'PROJECTS': {
+    'WINDOWS': { // Representing Windows 3.1
       type: 'directory',
+      date: '08-01-94', time: '11:00AM',
       children: {
-        'OVERLORD.TXT': { type: 'file', content: 'Project Overlord: Status - ACTIVE. Objective: AI Sentience.\nContact: Dr. Aris Thorne.'},
-        'CHIMERA.DAT': { type: 'file', content: 'CLASSIFIED DATA - ACCESS RESTRICTED'}
+        'SYSTEM': { type: 'directory', date: '08-01-94', time: '11:05AM', children: {
+            'SYSTEM.INI': { type: 'file', content: '[boot]\nshell=progman.exe', date: '08-15-94', time: '03:45PM', size: 2048 },
+            'WINFILE.EXE': { type: 'file', content: 'Windows File Manager', date: '04-10-92', time: '03:10AM', size: 168432 },
+        }},
+        'PROGMAN.EXE': { type: 'file', content: 'Windows Program Manager', date: '04-10-92', time: '03:10AM', size: 145120 },
+        'WIN.INI': { type: 'file', content: '[windows]\nload=\nrun=', date: '08-15-94', time: '03:50PM', size: 1536 },
+        'SOL.EXE': { type: 'file', content: 'Solitaire Game', date: '04-10-92', time: '03:10AM', size: 67232 },
       }
     },
-    'WELCOME.TXT': { type: 'file', content: 'Welcome to the Weyland Corp Mainframe.\nUse DIR to list files, CD to change directory, TYPE to view files.'},
-    'README.MD': { type: 'file', content: 'SYSTEM NOTICE: Unauthorized access is monitored and prosecuted.'}
+    'PROJECTS': { // Your existing projects folder
+      type: 'directory',
+      date: '10-15-95', time: '04:30PM',
+      children: {
+        'OVERLORD.TXT': { type: 'file', content: 'Project Overlord: Status - ACTIVE. Objective: AI Sentience.\nContact: Dr. Aris Thorne.', date: '11-01-95', time: '09:00AM', size: 1204 },
+        'CHIMERA.DAT': { type: 'file', content: 'CLASSIFIED DATA - ACCESS RESTRICTED', date: '12-05-95', time: '06:00PM', size: 8192 }
+      }
+    },
+    'WELCOME.TXT': { type: 'file', content: 'Welcome to the Weyland Corp Mainframe.\nUse DIR to list files, CD to change directory, TYPE to view files.', date: '01-01-96', time: '12:01AM', size: 150 },
+    'README.MD': { type: 'file', content: 'SYSTEM NOTICE: Unauthorized access is monitored and prosecuted.', date: '01-01-96', time: '12:05AM', size: 80 }
   }
 };
 
@@ -249,7 +263,7 @@ function DosTerminal(props) {
                 let currentPath = 'C:\\';
 
                 term.writeln("WEYLAND CORP (c) More human than human");
-                term.writeln("[Version 443.0.4.293]");
+                term.writeln("MS-DOS Version 6.22");
                 term.writeln("");
                 term.writeln("Type 'help' for a list of available commands.");
                 term.write(`${currentPath.toUpperCase()}> `);
@@ -290,29 +304,54 @@ function DosTerminal(props) {
                        term.writeln('Navigating to C:\\PROJECTS...');
                        navigate('/projects');
                      } else if (processedCommand === 'dir') {
-                        const entry = getFileSystemEntry(currentPath, fileSystem);
-                        if (entry && entry.type === 'directory') {
+                        const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
+                        if (currentDirEntry && currentDirEntry.type === 'directory') {
+                            term.writeln(` Volume in drive C is WEYLAND_OS`);
+                            term.writeln(` Volume Serial Number is 1986-0426`);
                             term.writeln(` Directory of ${currentPath.toUpperCase()}`);
                             term.writeln('');
-                            let fileCount = 0;
-                            let dirCount = 0;
+                            
+                            let totalFiles = 0;
+                            let totalDirs = 0;
+                            let totalBytes = 0;
+
+                            const formatName = (name) => {
+                                if (name.includes('.')) {
+                                    const parts = name.split('.');
+                                    return parts[0].substring(0, 8).padEnd(8) + ' ' + parts[1].substring(0, 3).padEnd(3);
+                                }
+                                return name.substring(0, 8).padEnd(8) + '   ';
+                            };
+                            
+                            const padLeft = (str, len) => String(str).padStart(len, ' ');
+
                             if (currentPath.toUpperCase() !== 'C:\\') {
-                                term.writeln(`  <DIR>         .`);
-                                term.writeln(`  <DIR>         ..`);
-                                dirCount +=2;
+                                const parentDirDate = currentDirEntry.date || '01-01-80';
+                                const parentDirTime = currentDirEntry.time || '12:00AM';
+                                term.writeln(`${formatName('.')}         <DIR>          ${parentDirDate}  ${parentDirTime}`);
+                                term.writeln(`${formatName('..')}        <DIR>          ${parentDirDate}  ${parentDirTime}`);
+                                totalDirs +=2;
                             }
 
-                            Object.entries(entry.children).forEach(([name, item]) => {
+                            Object.entries(currentDirEntry.children).forEach(([name, item]) => {
+                                const itemName = name.toUpperCase();
+                                const itemDate = item.date || '01-01-80';
+                                const itemTime = item.time || '12:00AM';
+
                                 if (item.type === 'directory') {
-                                    term.writeln(`  <DIR>         ${name}`);
-                                    dirCount++;
+                                    term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
+                                    totalDirs++;
                                 } else {
-                                    term.writeln(`                ${name}`);
-                                    fileCount++;
+                                    const itemSize = item.size || 0;
+                                    term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
+                                    totalFiles++;
+                                    totalBytes += itemSize;
                                 }
                             });
-                            term.writeln(`\r\n       ${fileCount} File(s)`);
-                            term.writeln(`       ${dirCount} Dir(s)`);
+                            term.writeln('');
+                            term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
+                            const fakeBytesFree = 512 * 1024 * 1024;
+                            term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
                         } else {
                             term.writeln('Invalid path.');
                         }
@@ -453,7 +492,7 @@ function DosTerminal(props) {
         onMouseDown={handleMouseDown}
         onDoubleClick={handleMaximizeButtonClick}
       >
-        <span>C:\WINDOWS\SYSTEM32\COMMAND.COM</span>
+        <span>MS-DOS Prompt</span>
         <div className="dos-terminal-window-controls">
           <button 
             className="dos-terminal-control-btn" 
