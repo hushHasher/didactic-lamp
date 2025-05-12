@@ -248,18 +248,16 @@ function DosTerminal(props) {
 
     if (windowState === 'minimized') {
       setWindowState('normal');
-      // Restore to position and size before minimizing
       setPosition(positionBeforeMinimize);
-      setInitialSize(sizeBeforeMinimize); // Restore size
-      // Ensure xterm fits when restoring from minimized
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
+      // No need to setInitialSize here, let CSS/container handle normal size
+      // Use a slightly longer delay for fit on restore
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
     } else {
       // Store current position and size before minimizing IF IT'S NORMAL OR MAXIMIZED
       if (windowState === 'normal') {
         setPositionBeforeMinimize({ x: currentRect.left, y: currentRect.top });
         setSizeBeforeMinimize({ width: currentRect.width, height: currentRect.height });
       } else if (windowState === 'maximized') {
-        // If maximizing from maximized, restore to the 'normal' size/pos before maximize
         setPositionBeforeMinimize(normalPositionBeforeMaximize);
         setSizeBeforeMinimize(normalSizeBeforeMaximize);
       }
@@ -271,13 +269,13 @@ function DosTerminal(props) {
 
   const handleMaximizeButtonClick = (e) => {
     e.stopPropagation();
-    // const term = termInstanceRef.current; // Not strictly needed here
 
     if (windowState === 'maximized') {
       setWindowState('normal');
-      setPosition(normalPositionBeforeMaximize); 
-      setInitialSize(normalSizeBeforeMaximize);
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
+      setPosition(normalPositionBeforeMaximize);
+      // No need to setInitialSize here
+      // Use a slightly longer delay for fit on restore
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
     } else {
       const currentRect = terminalWindowRef.current.getBoundingClientRect();
       // If currently normal or minimized, store its current state as the "before maximize" state
@@ -285,23 +283,25 @@ function DosTerminal(props) {
         setNormalPositionBeforeMaximize({ x: currentRect.left, y: currentRect.top });
         setNormalSizeBeforeMaximize({ width: currentRect.width, height: currentRect.height });
       } else if (windowState === 'minimized') {
-        // If minimizing from minimized, use the stored 'before minimize' state
         setNormalPositionBeforeMaximize(positionBeforeMinimize);
         setNormalSizeBeforeMaximize(sizeBeforeMinimize);
       }
       
       setWindowState('maximized');
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
+      // Use a slightly longer delay for fit on maximize
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
     }
   };
 
   useEffect(() => {
-    console.log("DosTerminal useEffect running.");
+    console.log("DosTerminal Main Initialization useEffect running."); // Add log
 
     let term;
+    let currentCommand = ''; // Keep command state local to the effect scope
+    let currentPath = 'C:\\'; // Keep path state local to the effect scope
 
     if (divRef.current && !termInstanceRef.current) {
-      console.log("DosTerminal: Initializing Terminal.");
+      console.log("DosTerminal: Initializing NEW Terminal instance.");
 
       if (!fitAddonInstanceRef.current) {
           fitAddonInstanceRef.current = new FitAddon();
@@ -319,271 +319,283 @@ function DosTerminal(props) {
           cursorAccent: '#0000AA'
         }
       });
-      termInstanceRef.current = term;
+      termInstanceRef.current = term; // Store the instance
 
       try {
         term.open(divRef.current);
-
         term.loadAddon(fitAddon);
 
+        // Use a slight delay for initial fit after DOM attachment
         setTimeout(() => {
-            try {
-                console.log("DosTerminal: Fitting addon...");
-                fitAddon.fit();
-                console.log(`DosTerminal: Fit complete. Size: ${term.cols}x${term.rows}`);
+          try {
+            fitAddon.fit();
+            console.log(`DosTerminal: Initial Fit complete. Size: ${term.cols}x${term.rows}`);
 
-                let currentCommand = '';
-                let currentPath = 'C:\\';
+            // --- Initial Terminal Output ---
+            term.writeln("WEYLAND CORP (c) More human than human");
+            term.writeln("MS-DOS Version 6.22");
+            term.writeln("");
+            term.writeln("Type 'help' for a list of available commands.");
 
-                term.writeln("WEYLAND CORP (c) More human than human");
-                term.writeln("MS-DOS Version 6.22");
-                term.writeln("");
-                term.writeln("Type 'help' for a list of available commands.");
-                term.write(`${currentPath.toUpperCase()}> `);
+            const updatePrompt = () => {
+              term.write(`\r\n${currentPath.toUpperCase()}> `);
+            };
+            term.write(`${currentPath.toUpperCase()}> `); // Initial prompt
 
-                const updatePrompt = () => {
-                  term.write(`\r\n${currentPath.toUpperCase()}> `);
-                };
+            // --- Key Listener Setup ---
+            keyListenerRef.current?.dispose(); // Dispose previous listener just in case
+            keyListenerRef.current = term.onKey(e => {
+              const { key, domEvent } = e;
+              const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
-                keyListenerRef.current?.dispose();
+              if (domEvent.key === 'Enter') {
+                term.writeln('');
+                const [command, ...args] = currentCommand.trim().split(/\s+/);
+                const processedCommand = command.toLowerCase();
 
-                keyListenerRef.current = term.onKey(e => {
-                  const { key, domEvent } = e;
-                  const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+                // --- Command Handling ---
+                if (processedCommand === 'help') {
+                  term.writeln('Available commands:');
+                  term.writeln('  help          - Displays this help message.');
+                  term.writeln('  about         - Navigates to the About section.');
+                  term.writeln('  projects      - Navigates to the Projects section.');
+                  term.writeln('  dir           - Lists files and directories.');
+                  term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
+                  term.writeln('  type <file>   - Displays the content of a file.');
+                  term.writeln('  clear         - Clears the terminal screen.');
+                  term.writeln('  exit          - Closes the terminal interface.');
+                } else if (processedCommand === 'clear') {
+                   term.clear();
+                } else if (processedCommand === 'exit') {
+                   term.writeln('Closing terminal interface...');
+                   props.onClose?.();
+                 } else if (processedCommand === 'about') {
+                   term.writeln('Navigating to C:\\ABOUT...');
+                   navigate('/about'); // Use navigate from hook dependency
+                 } else if (processedCommand === 'projects') {
+                   term.writeln('Navigating to C:\\PROJECTS...');
+                   navigate('/projects'); // Use navigate from hook dependency
+                 } else if (processedCommand === 'dir') {
+                    const dirToList = getFileSystemEntry(currentPath, fileSystem);
 
-                  if (domEvent.key === 'Enter') {
-                     term.writeln('');
-                     const [command, ...args] = currentCommand.trim().split(/\s+/);
-                     const processedCommand = command.toLowerCase();
-                     if (processedCommand === 'help') {
-                       term.writeln('Available commands:');
-                       term.writeln('  help          - Displays this help message.');
-                       term.writeln('  about         - Navigates to the About section.');
-                       term.writeln('  projects      - Navigates to the Projects section.');
-                       term.writeln('  dir           - Lists files and directories.');
-                       term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
-                       term.writeln('  type <file>   - Displays the content of a file.');
-                       term.writeln('  clear         - Clears the terminal screen.');
-                       term.writeln('  exit          - Closes the terminal interface.');
-                     } else if (processedCommand === 'clear') {
-                       term.clear();
-                     } else if (processedCommand === 'exit') {
-                       term.writeln('Closing terminal interface...');
-                       props.onClose?.();
-                     } else if (processedCommand === 'about') {
-                       term.writeln('Navigating to C:\\ABOUT...');
-                       navigate('/about');
-                     } else if (processedCommand === 'projects') {
-                       term.writeln('Navigating to C:\\PROJECTS...');
-                       navigate('/projects');
-                     } else if (processedCommand === 'dir') {
-                        const dirToList = getFileSystemEntry(currentPath, fileSystem);
+                    // Simplified check now works for root too, thanks to type: 'directory' on C:
+                    if (dirToList && dirToList.type === 'directory') {
+                        term.writeln(` Volume in drive C is WEYLAND_OS`);
+                        term.writeln(` Volume Serial Number is 1986-0426`);
+                        term.writeln(` Directory of ${currentPath.toUpperCase()}`);
+                        term.writeln('');
+                        
+                        let totalFiles = 0;
+                        let totalDirs = 0;
+                        let totalBytes = 0;
 
-                        // Simplified check now works for root too, thanks to type: 'directory' on C:
-                        if (dirToList && dirToList.type === 'directory') {
-                            term.writeln(` Volume in drive C is WEYLAND_OS`);
-                            term.writeln(` Volume Serial Number is 1986-0426`);
-                            term.writeln(` Directory of ${currentPath.toUpperCase()}`);
-                            term.writeln('');
-                            
-                            let totalFiles = 0;
-                            let totalDirs = 0;
-                            let totalBytes = 0;
-
-                            const formatName = (name) => {
-                                if (name.includes('.')) {
-                                    const parts = name.split('.');
-                                    return parts[0].substring(0, 8).padEnd(8) + ' ' + parts[1].substring(0, 3).padEnd(3);
-                                }
-                                return name.substring(0, 8).padEnd(8) + '   ';
-                            };
-                            
-                            const padLeft = (str, len) => String(str).padStart(len, ' ');
-
-                            // Determine the children to iterate over.
-                            // For C:\, children are direct properties. Use Object.keys filtered.
-                            // For subdirs, children are in the .children property.
-                            const childrenContainer = dirToList.children || dirToList;
-                            const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children'); // Filter out metadata keys
-
-                            // Always show '.' and '..' for subdirectories
-                            if (currentPath.toUpperCase() !== 'C:\\') {
-                                const selfDirDate = dirToList.date || '01-01-80';
-                                const selfDirTime = dirToList.time || '12:00AM';
-                                term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
-                                // Ideally get parent's date/time for '..'
-                                // For simplicity, using self's date/time for now.
-                                term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`);
-                                totalDirs += 2;
+                        const formatName = (name) => {
+                            if (name.includes('.')) {
+                                const parts = name.split('.');
+                                return parts[0].substring(0, 8).padEnd(8) + ' ' + parts[1].substring(0, 3).padEnd(3);
                             }
+                            return name.substring(0, 8).padEnd(8) + '   ';
+                        };
+                        
+                        const padLeft = (str, len) => String(str).padStart(len, ' ');
 
-                            keysToList.forEach(name => {
-                                const item = childrenContainer[name];
-                                const itemName = name.toUpperCase(); // Use the key as name
-                                const itemDate = item.date || '01-01-80';
-                                const itemTime = item.time || '12:00AM';
+                        // Determine the children to iterate over.
+                        // For C:\, children are direct properties. Use Object.keys filtered.
+                        // For subdirs, children are in the .children property.
+                        const childrenContainer = dirToList.children || dirToList;
+                        const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children'); // Filter out metadata keys
 
-                                if (item.type === 'directory') {
-                                    term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
-                                    totalDirs++;
-                                } else if (item.type === 'file') {
-                                    const itemSize = item.size || 0;
-                                    term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
-                                    totalFiles++;
-                                    totalBytes += itemSize;
-                                }
-                                // Ignore entries without a 'type'
-                            });
-
-                            term.writeln('');
-                            term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
-                            const fakeBytesFree = 512 * 1024 * 1024;
-                            term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
-                        } else {
-                            term.writeln('Invalid path.'); // Should be less likely now
+                        // Always show '.' and '..' for subdirectories
+                        if (currentPath.toUpperCase() !== 'C:\\') {
+                            const selfDirDate = dirToList.date || '01-01-80';
+                            const selfDirTime = dirToList.time || '12:00AM';
+                            term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
+                            // Ideally get parent's date/time for '..'
+                            // For simplicity, using self's date/time for now.
+                            term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`);
+                            totalDirs += 2;
                         }
-                     } else if (processedCommand === 'cd') {
-                        const targetDirRaw = args.join(' ').trim();
 
-                        if (!targetDirRaw) {
-                          term.writeln(currentPath.toUpperCase());
-                        } else {
-                          const targetDir = targetDirRaw.toUpperCase();
-                          let potentialNewPath;
+                        keysToList.forEach(name => {
+                            const item = childrenContainer[name];
+                            const itemName = name.toUpperCase(); // Use the key as name
+                            const itemDate = item.date || '01-01-80';
+                            const itemTime = item.time || '12:00AM';
 
-                          if (targetDir === '..') {
-                            const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
-                            if (parts.length > 0) {
-                              parts.pop(); // Go up one level
-                              potentialNewPath = 'C:\\' + parts.join('\\');
-                              if (parts.length > 0) {
-                                  potentialNewPath += '\\';
-                              } else {
-                                 potentialNewPath = 'C:\\'; // Ensure it's exactly C:\ if parts is empty
-                              }
-                            } else {
-                              potentialNewPath = 'C:\\';
+                            if (item.type === 'directory') {
+                                term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
+                                totalDirs++;
+                            } else if (item.type === 'file') {
+                                const itemSize = item.size || 0;
+                                term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
+                                totalFiles++;
+                                totalBytes += itemSize;
                             }
-                          } else if (targetDir.startsWith('C:\\')) {
-                            potentialNewPath = targetDir;
-                            if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') { // Don't add slash if it *is* C:
-                                potentialNewPath += '\\';
-                            }
-                            if (potentialNewPath.toUpperCase() === 'C:') { // Normalize C: to C:\
-                               potentialNewPath = 'C:\\';
-                            }
+                            // Ignore entries without a 'type'
+                        });
+
+                        term.writeln('');
+                        term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
+                        const fakeBytesFree = 512 * 1024 * 1024;
+                        term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
+                    } else {
+                        term.writeln('Invalid path.'); // Should be less likely now
+                    }
+                 } else if (processedCommand === 'cd') {
+                    const targetDirRaw = args.join(' ').trim();
+
+                    if (!targetDirRaw) {
+                      term.writeln(currentPath.toUpperCase());
+                    } else {
+                      const targetDir = targetDirRaw.toUpperCase();
+                      let potentialNewPath;
+
+                      if (targetDir === '..') {
+                        const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
+                        if (parts.length > 0) {
+                          parts.pop(); // Go up one level
+                          potentialNewPath = 'C:\\' + parts.join('\\');
+                          if (parts.length > 0) {
+                              potentialNewPath += '\\';
                           } else {
-                            const basePath = currentPath.toUpperCase() === 'C:\\' ? currentPath : (currentPath.endsWith('\\') ? currentPath : currentPath + '\\');
-                            potentialNewPath = basePath + targetDir;
-                            if (!potentialNewPath.endsWith('\\')) {
-                                potentialNewPath += '\\';
-                            }
+                             potentialNewPath = 'C:\\'; // Ensure it's exactly C:\ if parts is empty
                           }
-
-                          // Normalize edge case C: -> C:\ (redundant maybe, but safe)
-                          if (potentialNewPath.toUpperCase() === 'C:') {
-                              potentialNewPath = 'C:\\';
-                          }
-
-                          // Final check: Does the target directory exist?
-                          console.log(`CD checking path: "${potentialNewPath}"`); // Add log before check
-                          const entry = getFileSystemEntry(potentialNewPath, fileSystem);
-
-                          // Simple check now works for root and subdirs
-                          if (entry && entry.type === 'directory') {
-                            currentPath = potentialNewPath.toUpperCase();
-                          } else {
-                            term.writeln('Invalid directory');
-                            console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry); // Log failure details
-                          }
-                        }
-                     } else if (processedCommand === 'type') {
-                        const fileName = args.join(' ').trim().toUpperCase();
-                        if (!fileName) {
-                            term.writeln('Usage: TYPE <filename>');
                         } else {
-                            const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
-                            let fileEntry = null;
-
-                            // Use the correct source for children (direct properties for C:, .children for subdirs)
-                            const childrenSource = currentDirEntry?.children || currentDirEntry;
-
-                            if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
-                               fileEntry = childrenSource[fileName];
-                            }
-
-                            if (fileEntry && fileEntry.type === 'file') {
-                              const lines = fileEntry.content.split('\n');
-                              lines.forEach(line => term.writeln(line));
-                            } else if (fileEntry && fileEntry.type === 'directory') {
-                                term.writeln(`Access denied - ${fileName} is a directory.`);
-                            } else {
-                                term.writeln(`File not found - ${fileName}`);
-                            }
+                          potentialNewPath = 'C:\\';
                         }
-                     } else if (processedCommand !== '') {
-                       term.writeln(`Bad command or file name: ${processedCommand}`);
-                     }
-                     currentCommand = '';
-                     updatePrompt();
-                  } else if (domEvent.key === 'Backspace') {
-                     if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
-                       domEvent.preventDefault();
-                       term.write('\b \b');
-                       currentCommand = currentCommand.slice(0, -1);
-                     } else {
-                       domEvent.preventDefault();
-                     }
-                  } else if (printable && key.length === 1) {
-                     currentCommand += key;
-                     term.write(key);
-                  }
-                });
+                      } else if (targetDir.startsWith('C:\\')) {
+                        potentialNewPath = targetDir;
+                        if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') { // Don't add slash if it *is* C:
+                            potentialNewPath += '\\';
+                        }
+                        if (potentialNewPath.toUpperCase() === 'C:') { // Normalize C: to C:\
+                           potentialNewPath = 'C:\\';
+                        }
+                      } else {
+                        const basePath = currentPath.toUpperCase() === 'C:\\' ? currentPath : (currentPath.endsWith('\\') ? currentPath : currentPath + '\\');
+                        potentialNewPath = basePath + targetDir;
+                        if (!potentialNewPath.endsWith('\\')) {
+                            potentialNewPath += '\\';
+                        }
+                      }
 
-            } catch (fitError) {
-                console.error("Error during fit/write:", fitError);
-            }
-        }, 0);
+                      // Normalize edge case C: -> C:\ (redundant maybe, but safe)
+                      if (potentialNewPath.toUpperCase() === 'C:') {
+                          potentialNewPath = 'C:\\';
+                      }
+
+                      // Final check: Does the target directory exist?
+                      console.log(`CD checking path: "${potentialNewPath}"`); // Add log before check
+                      const entry = getFileSystemEntry(potentialNewPath, fileSystem);
+
+                      // Simple check now works for root and subdirs
+                      if (entry && entry.type === 'directory') {
+                        currentPath = potentialNewPath.toUpperCase();
+                      } else {
+                        term.writeln('Invalid directory');
+                        console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry); // Log failure details
+                      }
+                    }
+                 } else if (processedCommand === 'type') {
+                    const fileName = args.join(' ').trim().toUpperCase();
+                    if (!fileName) {
+                        term.writeln('Usage: TYPE <filename>');
+                    } else {
+                        const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
+                        let fileEntry = null;
+
+                        // Use the correct source for children (direct properties for C:, .children for subdirs)
+                        const childrenSource = currentDirEntry?.children || currentDirEntry;
+
+                        if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
+                           fileEntry = childrenSource[fileName];
+                        }
+
+                        if (fileEntry && fileEntry.type === 'file') {
+                          const lines = fileEntry.content.split('\n');
+                          lines.forEach(line => term.writeln(line));
+                        } else if (fileEntry && fileEntry.type === 'directory') {
+                            term.writeln(`Access denied - ${fileName} is a directory.`);
+                        } else {
+                            term.writeln(`File not found - ${fileName}`);
+                        }
+                    }
+                 } else if (processedCommand !== '') {
+                   term.writeln(`Bad command or file name: ${processedCommand}`);
+                 }
+                 currentCommand = ''; // Reset local command variable
+                 updatePrompt();
+              } else if (domEvent.key === 'Backspace') {
+                 if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
+                   domEvent.preventDefault();
+                   term.write('\b \b');
+                   currentCommand = currentCommand.slice(0, -1); // Update local command variable
+                 } else {
+                   domEvent.preventDefault();
+                 }
+              } else if (printable && key.length === 1) {
+                 currentCommand += key; // Update local command variable
+                 term.write(key);
+              }
+            }); // end term.onKey
+
+          } catch (fitError) {
+            console.error("Error during initial fit/write:", fitError);
+          }
+        }, 50); // Increased delay slightly
 
       } catch (initError) {
         console.error("Error during direct xterm initialization:", initError);
-        termInstanceRef.current = null;
+        termInstanceRef.current = null; // Clear ref on error
       }
+    } else {
+        console.log("DosTerminal: Skipping initialization (already initialized or divRef missing).");
     }
 
+    // --- Cleanup Function ---
     return () => {
-      console.log("DosTerminal cleanup: Disposing terminal and listener.");
-      keyListenerRef.current?.dispose();
-      keyListenerRef.current = null;
-      if (termInstanceRef.current) {
-          termInstanceRef.current.dispose();
-          termInstanceRef.current = null;
-          console.log("Terminal instance disposed.");
-      } else {
-          console.log("No terminal instance found in ref to dispose.");
+      console.log("DosTerminal Main Initialization cleanup running.");
+      // Dispose listener ONLY if we actually created one in this effect run
+      // (Prevents issues if effect runs multiple times before term init)
+      if (keyListenerRef.current) {
+          keyListenerRef.current.dispose();
+          keyListenerRef.current = null;
+          console.log("Key listener disposed.");
       }
+      // We should NOT dispose the terminal instance here anymore,
+      // as we want it to persist across renders caused by non-dependency changes.
+      // It will be disposed only when the DosTerminal component truly unmounts.
+      // If you wanted true cleanup on unmount, you'd need another useEffect with empty deps.
+      // Let's rely on the conditional rendering in App.jsx for unmounting/cleanup for now.
+
+      // If you uncomment the below, it WILL reset on navigation if the effect re-runs for *any* reason
+      // if (termInstanceRef.current) {
+      //     console.log("Disposing terminal instance in cleanup.");
+      //     termInstanceRef.current.dispose();
+      //     termInstanceRef.current = null;
+      // }
     };
 
-  }, [navigate, props.onClose]);
+  // MODIFICATION: Removed props.onClose from dependency array.
+  // Only navigate needs to be here if commands use it.
+  }, [navigate]); // End of main useEffect
 
   // --- Determine window style based on state ---
   let windowStyle = {};
-  // Default to 100% width/height of parent if not dragged and normal
-  // This allows .terminal-container to set the initial size/position.
+  let contentStyle = { height: 'calc(100% - 25px)', width: '100%' }; // Default content style
+
   if (!hasBeenDragged && windowState === 'normal') {
-    windowStyle = {
-        // Relies on parent .terminal-container for positioning and initial size
-        // .dos-terminal-window should have width: 100%, height: 100% in CSS
-        // to fill the .terminal-container
-    };
+    windowStyle = { /* Relies on parent .terminal-container */ };
   } else if (hasBeenDragged && windowState === 'normal') {
     windowStyle = {
       position: 'fixed',
       left: `${position.x}px`,
       top: `${position.y}px`,
-      width: `${initialSize.width}px`, 
+      width: `${initialSize.width}px`,
       height: `${initialSize.height}px`,
     };
+     // Ensure content height is correct relative to window height
+     contentStyle = { height: `calc(${initialSize.height}px - 25px)`, width: '100%' };
   } else if (windowState === 'maximized') {
     windowStyle = {
       position: 'fixed',
@@ -593,6 +605,8 @@ function DosTerminal(props) {
       height: '100vh',
       zIndex: 1001,
     };
+     // Explicitly set content height for maximized state
+     contentStyle = { height: 'calc(100vh - 25px)', width: '100%' };
   } else if (windowState === 'minimized') {
     // Style for a small bar, e.g., at the bottom or its last position
     windowStyle = {
@@ -647,8 +661,8 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      {/* MODIFICATION: Always render the content div, rely on CSS to hide */}
-      <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
+      {/* Apply dynamic contentStyle */}
+      <div ref={divRef} className="dos-terminal-content" style={contentStyle} />
     </div>
   );
 }

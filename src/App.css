@@ -54,9 +54,10 @@
   /* overflow: hidden; */ /* Let inline styles manage this based on state */
   color: #FFFFFF;
   font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
-  transition: width 0.2s ease-out, height 0.2s ease-out; /* Smooth transitions */
-  width: 100%; 
+  transition: width 0.2s ease-out, height 0.2s ease-out, left 0.2s ease-out, top 0.2s ease-out; /* Smooth transitions for size and position */
+  width: 100%;
   height: 100%;
+  overflow: hidden; /* ADD THIS to prevent artifacts */
 }
 
 .dos-terminal-window.minimized .dos-terminal-content {
@@ -110,14 +111,32 @@
 /* This ensures xterm fills the content area of our custom window */
 .dos-terminal-content {
   flex-grow: 1; /* Take remaining space */
-  padding: 5px; /* Padding around the xterm instance itself */
+  /* Padding removed - let xterm theme handle it or add internally if needed */
+  /* padding: 5px; */
   box-sizing: border-box;
+  height: 100%; /* Ensure it tries to fill */
+  overflow: hidden; /* Important for xterm internals */
+  position: relative; /* Needed for xterm viewport */
 }
 
 /* Ensure xterm itself fills the .dos-terminal-content correctly */
-.dos-terminal-content > div { /* This targets the div xterm.js creates */
+/* Target the direct div child created by xterm.js */
+.dos-terminal-content > .terminal {
    width: 100% !important;
    height: 100% !important;
+   position: relative; /* Needed for viewport */
+}
+
+/* Target the xterm viewport for good measure */
+.dos-terminal-content > .terminal .xterm-viewport {
+    overflow: hidden; /* Prevent scrollbars if content exceeds */
+    width: 100% !important;
+}
+
+/* Target the screen canvas area */
+.dos-terminal-content > .terminal .xterm-screen {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* --- Navbar Base Styles --- */
