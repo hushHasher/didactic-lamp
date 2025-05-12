@@ -65,21 +65,36 @@ function DosTerminal(props) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 });
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 }); // New state for size
 
   useEffect(() => {
-    // Set initial position based on the CSS-defined position of terminal-container
-    if (terminalWindowRef.current && !hasBeenDragged) {
-      const rect = terminalWindowRef.current.parentElement.getBoundingClientRect();
+    if (terminalWindowRef.current && terminalWindowRef.current.parentElement && !hasBeenDragged) {
+      const parentRect = terminalWindowRef.current.parentElement.getBoundingClientRect();
+      setInitialSize({ width: parentRect.width, height: parentRect.height });
+      // Set initial position based on parent, only if not already set by dragging
+      // This ensures it appears where .terminal-container places it initially.
+      // The position state (x,y) should represent the top-left corner for 'fixed' positioning.
+      setPosition({ x: parentRect.left, y: parentRect.top }); 
     }
-  }, [hasBeenDragged]);
+  }, [hasBeenDragged]); // Rerun if hasBeenDragged resets (though it doesn't currently)
 
   const handleMouseDown = (e) => {
     if (e.button !== 0) return;
     setIsDragging(true);
+    
+    if (!hasBeenDragged) { // If this is the first drag, capture initial size & position
+      const parentElement = terminalWindowRef.current.parentElement;
+      if (parentElement) {
+        const parentRect = parentElement.getBoundingClientRect();
+        setInitialSize({ width: parentRect.width, height: parentRect.height });
+        // Set current position to where it is now before drag starts
+        const currentRect = terminalWindowRef.current.getBoundingClientRect();
+        setPosition({ x: currentRect.left, y: currentRect.top });
+      }
+    }
     setHasBeenDragged(true);
 
     const terminalRect = terminalWindowRef.current.getBoundingClientRect();
-
     setDragStartOffset({
       x: e.clientX - terminalRect.left,
       y: e.clientY - terminalRect.top,
@@ -114,6 +129,11 @@ function DosTerminal(props) {
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  const handleCloseButtonClick = (e) => {
+    e.stopPropagation(); // Prevent click from bubbling up to title bar's onMouseDown
+    props.onClose?.();
+  };
 
   useEffect(() => {
     console.log("DosTerminal useEffect running.");
@@ -328,7 +348,12 @@ function DosTerminal(props) {
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
+        width: `${initialSize.width}px`, // Apply initial width
+        height: `${initialSize.height}px`, // Apply initial height
       } : {
+        // When not dragged, it relies on parent for size/pos
+        // Ensure .terminal-container in App.jsx is the direct parent
+        // and .dos-terminal-window has width/height 100% to fill it.
       }}
     >
       <div
@@ -336,9 +361,17 @@ function DosTerminal(props) {
         onMouseDown={handleMouseDown}
       >
         <span>C:\WINDOWS\SYSTEM32\COMMAND.COM</span>
-        <button className="dos-terminal-close-btn" onClick={props.onClose} aria-label="Close terminal">
-          X
-        </button>
+        <div className="dos-terminal-window-controls">
+          <button className="dos-terminal-control-btn" aria-label="Minimize">_</button>
+          <button className="dos-terminal-control-btn" aria-label="Maximize">[]</button>
+          <button 
+            className="dos-terminal-control-btn dos-terminal-close-btn"
+            onClick={handleCloseButtonClick}
+            aria-label="Close terminal"
+          >
+            X
+          </button>
+        </div>
       </div>
       <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
     </div>

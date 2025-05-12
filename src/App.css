@@ -178,3 +178,39 @@
 .tui-window > .tui-title {
   padding: 5px 15px;
 }
+
+.dos-terminal-window-controls {
+  display: flex;
+  align-items: center;
+}
+
+.dos-terminal-control-btn {
+  background-color: #C0C0C0;
+  color: #000000;
+  border: 1px outset #FFFFFF;
+  border-bottom-color: #808080;
+  border-right-color: #808080;
+  padding: 0; /* Adjust padding as needed */
+  font-family: inherit;
+  font-size: 12px; /* Smaller for these icons */
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  height: 18px;
+  width: 20px; /* Fixed width */
+  margin-left: 2px; /* Spacing between buttons */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dos-terminal-control-btn:active {
+  border-style: inset;
+}
+
+/* Keep specific close button style if it's different, or merge */
+.dos-terminal-close-btn { 
+  /* If .dos-terminal-control-btn covers all needs, this could be simplified */
+  /* For now, it inherits and can override */
+  /* background-color: #C0C0C0;  Ensure these are not conflicting if close is special */
+}
