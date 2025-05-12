@@ -80,61 +80,52 @@ function DosTerminal(props) {
   const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 });
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [windowState, setWindowState] = useState('normal'); // 'normal', 'maximized' (minimized is now like close)
+  const [windowState, setWindowState] = useState('normal'); // 'normal', 'minimized', 'maximized'
   const [normalSizeBeforeMaximize, setNormalSizeBeforeMaximize] = useState({ width: 0, height: 0 });
   const [normalPositionBeforeMaximize, setNormalPositionBeforeMaximize] = useState({ x: 0, y: 0 });
+  // Store position/size before minimizing to restore accurately
+  const [positionBeforeMinimize, setPositionBeforeMinimize] = useState({ x: 0, y: 0 });
+  const [sizeBeforeMinimize, setSizeBeforeMinimize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    // This effect primarily sets up the initial size and position for 'normal' state
-    // and for restoration from 'maximized' state.
     if (terminalWindowRef.current && terminalWindowRef.current.parentElement && !hasBeenDragged && windowState === 'normal') {
       const parentRect = terminalWindowRef.current.parentElement.getBoundingClientRect();
       const newSize = { width: parentRect.width, height: parentRect.height };
       
-      // Only set these if they haven't been set by a previous maximize action or drag
-      if (initialSize.width === 0 || initialSize.height === 0) {
-        setInitialSize(newSize);
-      }
-      if (normalSizeBeforeMaximize.width === 0 || normalSizeBeforeMaximize.height === 0) {
-        setNormalSizeBeforeMaximize(newSize);
-      }
+      if (initialSize.width === 0) setInitialSize(newSize);
+      if (normalSizeBeforeMaximize.width === 0) setNormalSizeBeforeMaximize(newSize);
+      if (sizeBeforeMinimize.width === 0) setSizeBeforeMinimize(newSize); // Initialize for minimize restore
       
       const newPosition = { x: parentRect.left, y: parentRect.top };
-      if (position.x === 0 && position.y === 0) { // Avoid resetting if already positioned by drag
-          setPosition(newPosition);
-      }
-      if (normalPositionBeforeMaximize.x === 0 && normalPositionBeforeMaximize.y === 0) {
-        setNormalPositionBeforeMaximize(newPosition);
-      }
+      if (position.x === 0 && position.y === 0) setPosition(newPosition);
+      if (normalPositionBeforeMaximize.x === 0 && normalPositionBeforeMaximize.y === 0) setNormalPositionBeforeMaximize(newPosition);
+      if (positionBeforeMinimize.x === 0 && positionBeforeMinimize.y === 0) setPositionBeforeMinimize(newPosition); // Initialize for minimize restore
     }
-  }, [hasBeenDragged, windowState, initialSize, normalSizeBeforeMaximize, position, normalPositionBeforeMaximize]);
+  }, [hasBeenDragged, windowState, initialSize, normalSizeBeforeMaximize, position, normalPositionBeforeMaximize, sizeBeforeMinimize, positionBeforeMinimize]);
 
   const handleMouseDown = (e) => {
-    if (e.button !== 0 || windowState === 'maximized') return; 
+    if (e.button !== 0 || windowState === 'maximized' || windowState === 'minimized') return; // Don't drag if maximized or minimized
     setIsDragging(true);
     
     if (!hasBeenDragged) {
       const parentElement = terminalWindowRef.current.parentElement;
       const currentWindowRect = terminalWindowRef.current.getBoundingClientRect();
-      let referenceSize;
-      let referencePos;
+      let referenceSize = { width: currentWindowRect.width, height: currentWindowRect.height };
+      let referencePos = { x: currentWindowRect.left, y: currentWindowRect.top };
 
       if (parentElement) {
           const parentRect = parentElement.getBoundingClientRect();
           referenceSize = { width: parentRect.width, height: parentRect.height };
           referencePos = { x: parentRect.left, y: parentRect.top };
-      } else { // Fallback if no parent (shouldn't happen with current setup)
-          referenceSize = { width: currentWindowRect.width, height: currentWindowRect.height };
-          referencePos = { x: currentWindowRect.left, y: currentWindowRect.top };
       }
       
       setInitialSize(referenceSize);
-      if (windowState !== 'maximized') { // Store these as the 'normal' dimensions if not coming from maximized
-        setNormalSizeBeforeMaximize(referenceSize);
-        setNormalPositionBeforeMaximize(referencePos);
-      }
-      // Ensure current position for drag calculation is accurate
+      setNormalSizeBeforeMaximize(referenceSize);
+      setSizeBeforeMinimize(referenceSize); // Capture for minimize
+      
       setPosition({ x: currentWindowRect.left, y: currentWindowRect.top });
+      setNormalPositionBeforeMaximize(referencePos);
+      setPositionBeforeMinimize(referencePos); // Capture for minimize
     }
     setHasBeenDragged(true);
 
@@ -179,46 +170,64 @@ function DosTerminal(props) {
     props.onClose?.();
     setWindowState('normal'); 
     setHasBeenDragged(false);
-    // Reset sizes and positions to initial defaults for next open
     setPosition({ x: 0, y: 0 }); 
     setInitialSize({ width: 0, height: 0 });
     setNormalSizeBeforeMaximize({ width: 0, height: 0 });
     setNormalPositionBeforeMaximize({ x: 0, y: 0 });
+    setSizeBeforeMinimize({width: 0, height: 0});
+    setPositionBeforeMinimize({x: 0, y: 0});
   };
 
-  // Minimize button now acts like close
   const handleMinimizeButtonClick = (e) => {
     e.stopPropagation();
-    handleCloseButtonClick(e); // Call the close handler
+    const currentRect = terminalWindowRef.current.getBoundingClientRect();
+
+    if (windowState === 'minimized') {
+      setWindowState('normal');
+      // Restore to position and size before minimizing
+      setPosition(positionBeforeMinimize);
+      setInitialSize(sizeBeforeMinimize); // Restore size
+      // Ensure xterm fits when restoring from minimized
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
+    } else {
+      // Store current position and size before minimizing IF IT'S NORMAL OR MAXIMIZED
+      if (windowState === 'normal') {
+        setPositionBeforeMinimize({ x: currentRect.left, y: currentRect.top });
+        setSizeBeforeMinimize({ width: currentRect.width, height: currentRect.height });
+      } else if (windowState === 'maximized') {
+        // If maximizing from maximized, restore to the 'normal' size/pos before maximize
+        setPositionBeforeMinimize(normalPositionBeforeMaximize);
+        setSizeBeforeMinimize(normalSizeBeforeMaximize);
+      }
+      // If it's already minimized and clicked again, it will go to 'normal' (handled above)
+      
+      setWindowState('minimized');
+    }
   };
 
   const handleMaximizeButtonClick = (e) => {
     e.stopPropagation();
-    const term = termInstanceRef.current; // Get the terminal instance
+    // const term = termInstanceRef.current; // Not strictly needed here
 
     if (windowState === 'maximized') {
       setWindowState('normal');
-      // Restore to position and size before maximizing
       setPosition(normalPositionBeforeMaximize); 
-      // No need to setInitialSize here, as 'normal' dragged state uses 'position' and 'initialSize' from drag start
-      // Or if not dragged, it relies on parent .terminal-container
-      // We should ensure `initialSize` is the one to restore to for `normal` mode.
-      // Let's make sure `normalSizeBeforeMaximize` is used as the target size for 'normal' state.
-      setInitialSize(normalSizeBeforeMaximize); // This ensures the 'normal' state uses the correct dimensions
-
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50); // Added small delay
+      setInitialSize(normalSizeBeforeMaximize);
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
     } else {
-      // Store current size and position IF it's in 'normal' state and has been potentially dragged
       const currentRect = terminalWindowRef.current.getBoundingClientRect();
+      // If currently normal or minimized, store its current state as the "before maximize" state
       if (windowState === 'normal') {
         setNormalPositionBeforeMaximize({ x: currentRect.left, y: currentRect.top });
         setNormalSizeBeforeMaximize({ width: currentRect.width, height: currentRect.height });
+      } else if (windowState === 'minimized') {
+        // If minimizing from minimized, use the stored 'before minimize' state
+        setNormalPositionBeforeMaximize(positionBeforeMinimize);
+        setNormalSizeBeforeMaximize(sizeBeforeMinimize);
       }
-      // If it wasn't dragged and is 'normal', its initial size from parent is already in normalSizeBeforeMaximize
       
       setWindowState('maximized');
-      // Position will be set by style block for maximized state
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50); // Added small delay
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 50);
     }
   };
 
@@ -304,8 +313,10 @@ function DosTerminal(props) {
                        term.writeln('Navigating to C:\\PROJECTS...');
                        navigate('/projects');
                      } else if (processedCommand === 'dir') {
-                        const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
-                        if (currentDirEntry && currentDirEntry.type === 'directory') {
+                        const dirToList = getFileSystemEntry(currentPath, fileSystem);
+
+                        // Check if dirToList is the C: root object OR a subdirectory with children
+                        if (dirToList && (currentPath.toUpperCase() === 'C:\\' || dirToList.type === 'directory')) {
                             term.writeln(` Volume in drive C is WEYLAND_OS`);
                             term.writeln(` Volume Serial Number is 1986-0426`);
                             term.writeln(` Directory of ${currentPath.toUpperCase()}`);
@@ -325,29 +336,48 @@ function DosTerminal(props) {
                             
                             const padLeft = (str, len) => String(str).padStart(len, ' ');
 
+                            // Determine the children to iterate over
+                            // For C:\, children are the direct properties of the C: object.
+                            // For subdirectories, children are in the .children property.
+                            const childrenToList = (currentPath.toUpperCase() === 'C:\\') ? dirToList : dirToList.children;
+
                             if (currentPath.toUpperCase() !== 'C:\\') {
-                                const parentDirDate = currentDirEntry.date || '01-01-80';
-                                const parentDirTime = currentDirEntry.time || '12:00AM';
-                                term.writeln(`${formatName('.')}         <DIR>          ${parentDirDate}  ${parentDirTime}`);
-                                term.writeln(`${formatName('..')}        <DIR>          ${parentDirDate}  ${parentDirTime}`);
+                                // For subdirectories, use its own date/time for . and ..
+                                const selfDirDate = dirToList.date || '01-01-80';
+                                const selfDirTime = dirToList.time || '12:00AM';
+                                term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
+                                term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`); // Ideally get parent's date/time
                                 totalDirs +=2;
                             }
+                            
+                            if (childrenToList) { // Ensure childrenToList is not null/undefined
+                                Object.entries(childrenToList).forEach(([name, item]) => {
+                                    // Skip 'type', 'date', 'time' properties if they exist at the C: root level
+                                    if (currentPath.toUpperCase() === 'C:\\' && (name === 'type' || name === 'date' || name === 'time')) {
+                                        return;
+                                    }
+                                    // Also skip 'children' property if we are listing a subdirectory that has its own children property.
+                                    // The children are listed through the loop, not the 'children' key itself.
+                                    if (dirToList.type === 'directory' && name === 'children'){
+                                        return;
+                                    }
 
-                            Object.entries(currentDirEntry.children).forEach(([name, item]) => {
-                                const itemName = name.toUpperCase();
-                                const itemDate = item.date || '01-01-80';
-                                const itemTime = item.time || '12:00AM';
 
-                                if (item.type === 'directory') {
-                                    term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
-                                    totalDirs++;
-                                } else {
-                                    const itemSize = item.size || 0;
-                                    term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
-                                    totalFiles++;
-                                    totalBytes += itemSize;
-                                }
-                            });
+                                    const itemName = name.toUpperCase();
+                                    const itemDate = item.date || '01-01-80';
+                                    const itemTime = item.time || '12:00AM';
+
+                                    if (item.type === 'directory') {
+                                        term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
+                                        totalDirs++;
+                                    } else if (item.type === 'file') { // Explicitly check for file type
+                                        const itemSize = item.size || 0;
+                                        term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
+                                        totalFiles++;
+                                        totalBytes += itemSize;
+                                    }
+                                });
+                            }
                             term.writeln('');
                             term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
                             const fakeBytesFree = 512 * 1024 * 1024;
@@ -454,57 +484,73 @@ function DosTerminal(props) {
 
   // --- Determine window style based on state ---
   let windowStyle = {};
-
-  if (windowState === 'maximized') {
+  // Default to 100% width/height of parent if not dragged and normal
+  // This allows .terminal-container to set the initial size/position.
+  if (!hasBeenDragged && windowState === 'normal') {
+    windowStyle = {
+        // Relies on parent .terminal-container for positioning and initial size
+        // .dos-terminal-window should have width: 100%, height: 100% in CSS
+        // to fill the .terminal-container
+    };
+  } else if (hasBeenDragged && windowState === 'normal') {
+    windowStyle = {
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      width: `${initialSize.width}px`, 
+      height: `${initialSize.height}px`,
+    };
+  } else if (windowState === 'maximized') {
     windowStyle = {
       position: 'fixed',
       left: '0px',
       top: '0px',
       width: '100vw',
       height: '100vh',
-      zIndex: 1001, // Ensure it's above other elements when maximized
+      zIndex: 1001,
     };
-  } else if (windowState === 'normal') {
-    if (hasBeenDragged) {
-      windowStyle = {
-        position: 'fixed',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${initialSize.width}px`, 
-        height: `${initialSize.height}px`,
-      };
-    } else {
-      // Not dragged, normal state: relies on .terminal-container for initial pos/size
-      // .dos-terminal-window has width/height 100% to fill its parent (.terminal-container)
-      // No specific style needed here as it will be positioned by its parent.
-    }
+  } else if (windowState === 'minimized') {
+    // Style for a small bar, e.g., at the bottom or its last position
+    windowStyle = {
+      position: 'fixed',
+      // If it was dragged, use its last position. Otherwise, default to bottom right.
+      left: hasBeenDragged ? `${positionBeforeMinimize.x}px` : 'auto',
+      top: hasBeenDragged ? `${positionBeforeMinimize.y}px` : 'auto',
+      right: !hasBeenDragged ? '20px' : 'auto',
+      bottom: !hasBeenDragged ? '20px' : 'auto',
+      width: hasBeenDragged ? `${sizeBeforeMinimize.width * 0.3}px` : '200px', // Smaller width
+      height: '25px', // Just the title bar height
+      overflow: 'hidden',
+      zIndex: 1000, // Same as normal draggable
+    };
   }
-  // No 'minimized' style block needed as it now closes.
 
   return (
     <div
       ref={terminalWindowRef}
-      className="dos-terminal-window"
-      style={windowStyle} // Apply the determined style
+      className={`dos-terminal-window ${windowState === 'minimized' ? 'minimized' : ''}`}
+      style={windowStyle}
     >
       <div
         className="dos-terminal-title-bar"
         onMouseDown={handleMouseDown}
-        onDoubleClick={handleMaximizeButtonClick}
+        // Double click to restore if minimized, otherwise toggle maximize
+        onDoubleClick={windowState === 'minimized' ? handleMinimizeButtonClick : handleMaximizeButtonClick}
       >
         <span>MS-DOS Prompt</span>
         <div className="dos-terminal-window-controls">
           <button 
             className="dos-terminal-control-btn" 
-            aria-label="Minimize (Close)" // Updated label
+            aria-label={windowState === 'minimized' ? "Restore" : "Minimize"}
             onClick={handleMinimizeButtonClick}
           >
-            _
+            {windowState === 'minimized' ? '❐' : '_'} {/* Restore/Minimize icons */}
           </button>
           <button 
             className="dos-terminal-control-btn" 
             aria-label={windowState === 'maximized' ? "Restore" : "Maximize"}
             onClick={handleMaximizeButtonClick}
+            disabled={windowState === 'minimized'} // Disable maximize when minimized
           >
             {windowState === 'maximized' ? '❐' : '□'}
           </button>
@@ -517,8 +563,12 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      {/* Content is always rendered now, as minimize closes the window */}
-      <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
+      {/* Conditionally RENDER content based on minimized state, not just hide with CSS for performance */}
+      {windowState !== 'minimized' && (
+        <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
+      )}
+      {/* For minimized state, you could show a different, very simple content if needed */}
+      {/* e.g., if(windowState === 'minimized') { <div class="minimized-placeholder">MS-DOS</div> } */}
     </div>
   );
 }

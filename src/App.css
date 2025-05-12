@@ -51,10 +51,21 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  /* overflow: hidden; */ /* Might interfere with explicit height for minimized, manage in JS style */
+  /* overflow: hidden; */ /* Let inline styles manage this based on state */
   color: #FFFFFF;
   font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
   transition: width 0.2s ease-out, height 0.2s ease-out; /* Smooth transitions */
+  width: 100%; 
+  height: 100%;
+}
+
+.dos-terminal-window.minimized .dos-terminal-content {
+  display: none; /* Ensure content is hidden when minimized (also handled by JS conditional render) */
+}
+
+.dos-terminal-window.minimized .dos-terminal-title-bar {
+  /* You might want to change cursor if it's not draggable when minimized */
+  cursor: default; 
 }
 
 .dos-terminal-title-bar {
