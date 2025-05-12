@@ -85,15 +85,14 @@ function DosTerminal() {
                        term.writeln('  projects - Navigates to the Projects section.');
                        term.writeln('  contact  - Navigates to the Contact section.');
                        term.writeln('  clear    - Clears the terminal screen.');
-                       term.writeln('  exit     - Closes the terminal interface.');
+                       term.writeln('  exit     - (Placeholder) Closes the terminal interface.');
                      } else if (trimmedCommand === 'clear') {
                        term.clear();
                      } else if (trimmedCommand === 'exit') {
-                       term.writeln('Closing terminal interface...');
-                       // To actually close, we'd need to call toggleTerminal from App.jsx
-                       // This would require passing the toggleTerminal function as a prop.
-                       // For now, this message is a placeholder.
-                       // Consider: props.onClose?.(); if you pass a prop
+                       term.writeln('Closing terminal interface... (Manual close for now)');
+                       // To enable actual close:
+                       // 1. Pass toggleTerminal from App.jsx as a prop (e.g., <DosTerminal onClose={toggleTerminal} />)
+                       // 2. Call props.onClose?.(); here.
                      } else if (trimmedCommand === 'about') {
                        term.writeln('Navigating to C:\\ABOUT...');
                        navigate('/about');
@@ -110,13 +109,17 @@ function DosTerminal() {
                      term.write("\r\nC:\\> "); // Write next prompt
                      currentCommand = ''; // Reset command buffer
                   } else if (domEvent.key === 'Backspace') {
-                     // Handle backspace; prevent deleting prompt
-                     if (term.buffer.normal.cursorX > 4) { // Check cursor position
-                       term.write('\b \b'); // Erase char visually
-                       if (currentCommand.length > 0) currentCommand = currentCommand.slice(0,-1); // Update buffer
+                     // Check if the cursor is beyond the prompt "C:\> " (4 characters)
+                     if (term.buffer.normal.cursorX > 4) {
+                       domEvent.preventDefault(); // Prevent default backspace behavior
+                       term.write('\b \b'); // Manually erase character on screen
+                       if (currentCommand.length > 0) {
+                         currentCommand = currentCommand.slice(0, -1); // Update command buffer
+                       }
+                     } else {
+                       domEvent.preventDefault(); // Also prevent backspacing into prompt
                      }
-                  } else if (printable && key.length === 1) {
-                     // Handle printable characters
+                  } else if (printable && key.length === 1) { // Ensure 'key' is a single character
                      currentCommand += key;
                      term.write(key); // Echo character
                   }
@@ -150,7 +153,7 @@ function DosTerminal() {
       }
     };
 
-  }, [navigate]); // Empty dependency array ensures this runs only once when component mounts
+  }, [navigate]); // Added navigate to dependency array
 
   // Render the div where the terminal will attach.
   // Style ensures it fills the container defined in App.css
