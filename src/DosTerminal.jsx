@@ -563,12 +563,8 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      {/* Conditionally RENDER content based on minimized state, not just hide with CSS for performance */}
-      {windowState !== 'minimized' && (
-        <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
-      )}
-      {/* For minimized state, you could show a different, very simple content if needed */}
-      {/* e.g., if(windowState === 'minimized') { <div class="minimized-placeholder">MS-DOS</div> } */}
+      {/* MODIFICATION: Always render the content div, rely on CSS to hide */}
+      <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
     </div>
   );
 }

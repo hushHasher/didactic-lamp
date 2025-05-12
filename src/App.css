@@ -60,12 +60,12 @@
 }
 
 .dos-terminal-window.minimized .dos-terminal-content {
-  display: none; /* Ensure content is hidden when minimized (also handled by JS conditional render) */
+  display: none;
 }
 
 .dos-terminal-window.minimized .dos-terminal-title-bar {
   /* You might want to change cursor if it's not draggable when minimized */
-  cursor: default; 
+  cursor: default;
 }
 
 .dos-terminal-title-bar {
