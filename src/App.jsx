@@ -5,6 +5,7 @@ import DosTerminal from './DosTerminal';
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
+import FooterClock from './components/FooterClock'; // Import the new component
 import './App.css'; // Main layout styles
 
 function App() {
@@ -12,21 +13,6 @@ function App() {
   const [showTerminal, setShowTerminal] = useState(false);
   // State for Mobile Menu Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // --- Add state for the current time ---
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
-
-  // --- Add effect to update time every second ---
-  useEffect(() => {
-    // Set up the interval
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000); // Update every 1000ms (1 second)
-
-    // Cleanup function to clear the interval when the component unmounts
-    return () => {
-      clearInterval(timerId);
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount
 
   const toggleTerminal = () => {
     setShowTerminal(prevState => !prevState);
@@ -119,10 +105,7 @@ function App() {
       {/* --- End Main Content Area --- */}
 
       {/* --- Footer --- */}
-      <footer className="tui-panel" style={{textAlign: 'center', padding: '10px', marginTop: 'auto', flexShrink: 0 }}>
-          {/* Render the time from state */}
-          (C) 1986 - {new Date().getFullYear()} Weyland Corp. Current time: {currentTime}
-      </footer>
+      <FooterClock />
       {/* --- End Footer --- */}
 
       {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
