@@ -22,34 +22,89 @@
 
 /* Style for the terminal container - AS OVERLAY */
 .terminal-container {
-  /* Positioning */
+  /* Positioning - this will be the initial position. Dragging will override top/left via inline styles. */
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 1000;
 
-  /* Size (adjust as needed) */
+  /* Size (adjust as needed) - these define the DosTerminal's window size */
   height: 450px;
   width: 700px;
-  max-width: 90vw;
-  max-height: 80vh;
+  max-width: 90vw; /* Ensure it doesn't go too wide on small screens */
+  max-height: 80vh; /* Ensure it doesn't go too tall */
 
-  /* Appearance */
-  border: 1px solid #888;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-  background-color: #0000AA;
-
-  /* MODIFIED: Added padding and box-sizing */
-  padding: 10px; /* Add space between border and terminal content */
-  box-sizing: border-box; /* Include padding in width/height calculation */
+  /* Appearance for the outer container if needed, but DosTerminal will have its own */
+  /* box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); */ /* Moved to dos-terminal-window */
+  /* border: 1px solid #888; */ /* Moved to dos-terminal-window */
+  /* background-color: #0000AA; */ /* Moved to dos-terminal-window */
+  /* padding: 10px; */ /* Removed, padding handled internally or by window style */
+  /* box-sizing: border-box; */
 }
 
-/* Style the div *inside* terminal-container where xterm attaches */
-/* This ensures xterm fills the container's content area */
-.terminal-container > div {
+/* New styles for the self-contained terminal window */
+.dos-terminal-window {
+  width: 100%;
+  height: 100%;
+  background-color: #0000AA; /* Classic blue */
+  border: 2px solid #FFFFFF; /* White border, thicker */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Important for containing xterm */
+  color: #FFFFFF; /* Default text color for title bar etc. */
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace; /* DOS-like font */
+}
+
+.dos-terminal-title-bar {
+  background-color: #0000AA; /* Same as window, or slightly different if desired */
+  color: #FFFFFF;
+  padding: 3px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 25px; /* Fixed height for the title bar */
+  border-bottom: 2px solid #FFFFFF;
+  cursor: grab; /* Indicate it's draggable */
+  user-select: none; /* Prevent text selection when dragging title */
+}
+
+.dos-terminal-title-bar span {
+  font-weight: bold;
+}
+
+.dos-terminal-close-btn {
+  background-color: #C0C0C0; /* Light grey, classic button color */
+  color: #000000;
+  border: 1px outset #FFFFFF;
+  border-bottom-color: #808080;
+  border-right-color: #808080;
+  padding: 0px 6px;
+  font-family: inherit; /* Use the DOS-like font */
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  height: 18px;
+  min-width: 20px;
+}
+
+.dos-terminal-close-btn:active {
+  border-style: inset;
+}
+
+/* The div *inside* DosTerminal where xterm attaches */
+/* This ensures xterm fills the content area of our custom window */
+.dos-terminal-content {
+  flex-grow: 1; /* Take remaining space */
+  padding: 5px; /* Padding around the xterm instance itself */
+  box-sizing: border-box;
+}
+
+/* Ensure xterm itself fills the .dos-terminal-content correctly */
+.dos-terminal-content > div { /* This targets the div xterm.js creates */
    width: 100% !important;
    height: 100% !important;
-   /* box-sizing: border-box; /* Keep this if needed, but often inherited or not necessary here */
 }
 
 /* --- Navbar Base Styles --- */
