@@ -65,31 +65,42 @@ function DosTerminal(props) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 });
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
-  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 }); // New state for size
+  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const [windowState, setWindowState] = useState('normal'); // 'normal', 'minimized', 'maximized'
+  const [normalSizeBeforeMaximize, setNormalSizeBeforeMaximize] = useState({ width: 0, height: 0 });
+  const [normalPositionBeforeMaximize, setNormalPositionBeforeMaximize] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (terminalWindowRef.current && terminalWindowRef.current.parentElement && !hasBeenDragged) {
+    if (terminalWindowRef.current && terminalWindowRef.current.parentElement && !hasBeenDragged && windowState === 'normal') {
       const parentRect = terminalWindowRef.current.parentElement.getBoundingClientRect();
-      setInitialSize({ width: parentRect.width, height: parentRect.height });
-      // Set initial position based on parent, only if not already set by dragging
-      // This ensures it appears where .terminal-container places it initially.
-      // The position state (x,y) should represent the top-left corner for 'fixed' positioning.
-      setPosition({ x: parentRect.left, y: parentRect.top }); 
+      const newSize = { width: parentRect.width, height: parentRect.height };
+      setInitialSize(newSize);
+      setNormalSizeBeforeMaximize(newSize); // Also set for potential maximize
+      
+      const newPosition = { x: parentRect.left, y: parentRect.top };
+      setPosition(newPosition);
+      setNormalPositionBeforeMaximize(newPosition); // Also set for potential maximize
     }
-  }, [hasBeenDragged]); // Rerun if hasBeenDragged resets (though it doesn't currently)
+  // Ensure dependencies are correct, windowState might be needed if logic changes based on it
+  }, [hasBeenDragged, windowState]); 
 
   const handleMouseDown = (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || windowState === 'maximized') return; // Don't drag if maximized
     setIsDragging(true);
     
-    if (!hasBeenDragged) { // If this is the first drag, capture initial size & position
+    if (!hasBeenDragged) {
       const parentElement = terminalWindowRef.current.parentElement;
       if (parentElement) {
         const parentRect = parentElement.getBoundingClientRect();
-        setInitialSize({ width: parentRect.width, height: parentRect.height });
-        // Set current position to where it is now before drag starts
+        const currentSize = { width: parentRect.width, height: parentRect.height };
+        setInitialSize(currentSize);
+        // Only update normalSize if not already set by maximize logic
+        if (windowState !== 'maximized') setNormalSizeBeforeMaximize(currentSize);
+        
         const currentRect = terminalWindowRef.current.getBoundingClientRect();
-        setPosition({ x: currentRect.left, y: currentRect.top });
+        const currentPos = { x: currentRect.left, y: currentRect.top };
+        setPosition(currentPos);
+        if (windowState !== 'maximized') setNormalPositionBeforeMaximize(currentPos);
       }
     }
     setHasBeenDragged(true);
@@ -131,8 +142,47 @@ function DosTerminal(props) {
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const handleCloseButtonClick = (e) => {
-    e.stopPropagation(); // Prevent click from bubbling up to title bar's onMouseDown
+    e.stopPropagation(); 
     props.onClose?.();
+    // Optionally reset state if terminal can be reopened later
+    setWindowState('normal'); 
+    setHasBeenDragged(false);
+  };
+
+  const handleMinimizeButtonClick = (e) => {
+    e.stopPropagation();
+    if (windowState === 'minimized') {
+      setWindowState('normal');
+      // Ensure xterm fits when restoring from minimized
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 0);
+    } else {
+      setWindowState('minimized');
+    }
+  };
+
+  const handleMaximizeButtonClick = (e) => {
+    e.stopPropagation();
+    if (windowState === 'maximized') {
+      setWindowState('normal');
+      setPosition(normalPositionBeforeMaximize);
+      setInitialSize(normalSizeBeforeMaximize); // This will be used by the style block
+       // Ensure xterm fits when restoring
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 0);
+    } else {
+      // Store current size and position before maximizing
+      const currentRect = terminalWindowRef.current.getBoundingClientRect();
+      setNormalPositionBeforeMaximize({ x: currentRect.left, y: currentRect.top });
+      // Use initialSize if not dragged yet, or currentRect.width/height if it has been
+      setNormalSizeBeforeMaximize({ 
+        width: hasBeenDragged ? currentRect.width : initialSize.width, 
+        height: hasBeenDragged ? currentRect.height : initialSize.height 
+      });
+      
+      setWindowState('maximized');
+      // Position will be set by style block for maximized state
+       // Ensure xterm fits when maximizing
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 0);
+    }
   };
 
   useEffect(() => {
@@ -340,30 +390,75 @@ function DosTerminal(props) {
 
   }, [navigate, props.onClose]);
 
+  // --- Determine window style based on state ---
+  let windowStyle = {};
+  if (hasBeenDragged && windowState === 'normal') {
+    windowStyle = {
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      width: `${initialSize.width}px`,
+      height: `${initialSize.height}px`,
+    };
+  } else if (windowState === 'maximized') {
+    windowStyle = {
+      position: 'fixed',
+      left: '0px',
+      top: '0px',
+      width: '100vw',
+      height: '100vh', // Or calc(100vh - taskbarHeight) if you want to be fancy
+    };
+  } else if (windowState === 'minimized') {
+    // When minimized, it will also be 'fixed' positioned if it was dragged before.
+    // If not dragged, it should stay where .terminal-container put it.
+    // We'll apply fixed positioning to ensure it can be placed at bottom or wherever.
+    // For simplicity, let's just shrink it and keep its last 'normal' or initial position.
+    windowStyle = {
+      position: 'fixed', // Or inherit if not hasBeenDragged and you want it relative to .terminal-container
+      left: hasBeenDragged ? `${position.x}px` : (terminalWindowRef.current?.parentElement?.getBoundingClientRect().left || 0) + 'px',
+      top: hasBeenDragged ? `${position.y}px` : (terminalWindowRef.current?.parentElement?.getBoundingClientRect().top || 0) + 'px',
+      width: `${initialSize.width * 0.5}px`, // Example: half width
+      height: '25px', // Just the title bar height
+      overflow: 'hidden', // Hide content
+    };
+    // If not dragged, and we want to place it at the bottom right corner when minimized:
+    if (!hasBeenDragged) {
+        windowStyle.left = 'auto'; // unset left
+        windowStyle.right = '20px'; // From .terminal-container
+        windowStyle.top = 'auto';   // unset top
+        windowStyle.bottom = '20px'; // From .terminal-container
+        windowStyle.width = '200px'; // A fixed minimized width
+    }
+  }
+  // If !hasBeenDragged and windowState === 'normal', it uses CSS from .terminal-container parent.
+
   return (
     <div
       ref={terminalWindowRef}
       className="dos-terminal-window"
-      style={hasBeenDragged ? {
-        position: 'fixed',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${initialSize.width}px`, // Apply initial width
-        height: `${initialSize.height}px`, // Apply initial height
-      } : {
-        // When not dragged, it relies on parent for size/pos
-        // Ensure .terminal-container in App.jsx is the direct parent
-        // and .dos-terminal-window has width/height 100% to fill it.
-      }}
+      style={windowStyle}
     >
       <div
         className="dos-terminal-title-bar"
         onMouseDown={handleMouseDown}
+        onDoubleClick={handleMaximizeButtonClick} // Double click to maximize/restore
       >
         <span>C:\WINDOWS\SYSTEM32\COMMAND.COM</span>
         <div className="dos-terminal-window-controls">
-          <button className="dos-terminal-control-btn" aria-label="Minimize">_</button>
-          <button className="dos-terminal-control-btn" aria-label="Maximize">[]</button>
+          <button 
+            className="dos-terminal-control-btn" 
+            aria-label="Minimize"
+            onClick={handleMinimizeButtonClick}
+          >
+            _
+          </button>
+          <button 
+            className="dos-terminal-control-btn" 
+            aria-label={windowState === 'maximized' ? "Restore" : "Maximize"}
+            onClick={handleMaximizeButtonClick}
+          >
+            {windowState === 'maximized' ? '❐' : '□'} {/* Maximize/Restore icons */}
+          </button>
           <button 
             className="dos-terminal-control-btn dos-terminal-close-btn"
             onClick={handleCloseButtonClick}
@@ -373,7 +468,9 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
+      {windowState !== 'minimized' && ( // Conditionally render content
+        <div ref={divRef} className="dos-terminal-content" style={{ height: 'calc(100% - 25px)', width: '100%' }} />
+      )}
     </div>
   );
 }
