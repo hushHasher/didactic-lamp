@@ -1,5 +1,6 @@
 // src/DosTerminal.jsx
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -10,6 +11,7 @@ function DosTerminal() {
   const termInstanceRef = useRef(null);
   const fitAddonInstanceRef = useRef(null);
   const keyListenerRef = useRef(null); // Ref to hold the key listener disposable
+  const navigate = useNavigate();
 
   useEffect(() => {
     // This effect runs when the DosTerminal component mounts
@@ -59,6 +61,7 @@ function DosTerminal() {
                 term.writeln("WEYLAND CORP (c) More human than human");
                 term.writeln("[Version 443.0.4.293]");
                 term.writeln("");
+                term.writeln("Type 'help' for a list of available commands.");
                 term.write("C:\\> ");
 
                 // --- Input Handling ---
@@ -73,16 +76,33 @@ function DosTerminal() {
 
                   if (domEvent.key === 'Enter') {
                      term.writeln(''); // Echo newline
-                     const trimmedCommand = currentCommand.trim();
+                     const trimmedCommand = currentCommand.trim().toLowerCase();
                      // --- Process Commands ---
                      if (trimmedCommand === 'help') {
-                       term.writeln('Available commands: help, clear, exit');
-                       // Add other commands for 'about', 'projects', 'contact' later
+                       term.writeln('Available commands:');
+                       term.writeln('  help     - Displays this help message.');
+                       term.writeln('  about    - Navigates to the About section.');
+                       term.writeln('  projects - Navigates to the Projects section.');
+                       term.writeln('  contact  - Navigates to the Contact section.');
+                       term.writeln('  clear    - Clears the terminal screen.');
+                       term.writeln('  exit     - Closes the terminal interface.');
                      } else if (trimmedCommand === 'clear') {
                        term.clear();
                      } else if (trimmedCommand === 'exit') {
-                       term.writeln('Exiting terminal... (Close window or press button)');
-                       // Ideally, trigger the toggle function in App.jsx via props
+                       term.writeln('Closing terminal interface...');
+                       // To actually close, we'd need to call toggleTerminal from App.jsx
+                       // This would require passing the toggleTerminal function as a prop.
+                       // For now, this message is a placeholder.
+                       // Consider: props.onClose?.(); if you pass a prop
+                     } else if (trimmedCommand === 'about') {
+                       term.writeln('Navigating to C:\\ABOUT...');
+                       navigate('/about');
+                     } else if (trimmedCommand === 'projects') {
+                       term.writeln('Navigating to C:\\PROJECTS...');
+                       navigate('/projects');
+                     } else if (trimmedCommand === 'contact') {
+                       term.writeln('Navigating to C:\\CONTACT...');
+                       navigate('/contact');
                      } else if (trimmedCommand !== '') { // If command not empty and not recognized
                        term.writeln(`Bad command or file name: ${trimmedCommand}`);
                      }
@@ -130,7 +150,7 @@ function DosTerminal() {
       }
     };
 
-  }, []); // Empty dependency array ensures this runs only once when component mounts
+  }, [navigate]); // Empty dependency array ensures this runs only once when component mounts
 
   // Render the div where the terminal will attach.
   // Style ensures it fills the container defined in App.css
