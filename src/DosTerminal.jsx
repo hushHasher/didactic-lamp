@@ -374,9 +374,11 @@ function DosTerminal(props) {
                  } else if (processedCommand === 'about') {
                    term.writeln('Navigating to C:\\ABOUT...');
                    navigate('/about'); 
+                   onClose?.();
                  } else if (processedCommand === 'projects') {
                    term.writeln('Navigating to C:\\PROJECTS...');
                    navigate('/projects'); 
+                   onClose?.();
                  } else if (processedCommand === 'dir') {
                     const dirToList = getFileSystemEntry(currentPath, fileSystem);
                     if (dirToList && dirToList.type === 'directory') {
@@ -498,7 +500,9 @@ function DosTerminal(props) {
                  }
                 currentCommand = '';
                 console.log(`[DosTerminal-onKey-Enter] currentCommand reset. About to call updatePrompt.`);
-                updatePrompt();
+                if (processedCommand !== 'about' && processedCommand !== 'projects' && processedCommand !== 'exit') {
+                    updatePrompt(); 
+                }
               } else if (domEvent.key === 'Backspace') {
                  if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
                    domEvent.preventDefault();
