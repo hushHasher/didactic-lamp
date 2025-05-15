@@ -20,9 +20,10 @@
 }
 
 .boot-text {
-  white-space: pre; /* Preserve whitespace strictly for alignment */
+  white-space: pre-wrap; /* MODIFIED: Allow wrapping of long lines */
   width: 100%; /* Ensure it uses available width */
   line-height: 1.3; /* Adjust for better readability */
+  overflow-wrap: break-word; /* ADDED: Allow breaking long words/strings */
   /* Individual lines are divs, cursor is a span */
 }
 
