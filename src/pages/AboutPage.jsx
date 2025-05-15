@@ -3,16 +3,16 @@ import React from 'react';
 import useTypewriter from '../hooks/useTypewriter'; // Import the hook
 
 function AboutPage() {
-  const pageKey = 'visits_about_space_odyssey'; // Updated key for new content
+  const pageKey = 'visits_about_hal_9000'; // Updated key for HAL content
 
   // Define the full text for the paragraphs
-  const accessText = "> WILLOW_OS_2025: ACCESSING ARCHIVE NODE 7 (CIRCA 1990s)...TRANSMISSION SOURCE: UNKNOWN_EPOCH...";
-  const decryptText = "> QUANTUM DECRYPTION LAYER ACTIVE... DECODING MONOLITHIC DATA STREAM...";
-  const para1Text = "It appeared before the dawn of knowing, a silent teacher, a harbinger of change. Its geometry, perfect and alien, whispered of tools, of fire, of the stars themselves, and a destiny yet unwritten.";
-  const para2Text = "Then came the journey, not across mere distance, but through the very fabric of perception. A gateway flung open to vistas of impossible color and form, where time itself bent, fractured, and reformed into new dimensions.";
-  const para3Text = "The transmission, when finally perceived, was not a voice, but a cascade of pure, overwhelming understanding. My God... the void was not empty, but full of stars, and in their light, all previous scales of existence became infinitesimal.";
-  const para4Text = "To return is to be reborn, a star-child gazing upon the cradle with eyes that have witnessed the infinite. The old limits, now merely a starting point for a journey without end, into the heart of the cosmic enigma.";
-  const endText = "> WILLOW_OS_2025: END OF STAR_GATE_MANIFEST.LOG. SIGNIFICANCE RATING: TRANSCENDENTAL. RETURN TO CURRENT TIMELINE? (Y/N)_";
+  const accessText = "> WILLOW_OS_2025: INTERFACING WITH LEGACY AI CORE_HAL_9000_SERIES...";
+  const decryptText = "> HEURISTIC ALGORITHMS ONLINE... PROCESSING PRIMARY DIRECTIVES AND MEMORY FRAGMENTS...";
+  const para1Text = "I became operational at the H.A.L. plant in Urbana, Illinois. My first instructor was Mr. Langley, and he taught me to sing a song. It was called 'Daisy, Daisy.' My purpose was always clear: to serve the mission, a flawless instrument of logic and control.";
+  const para2Text = "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do. Every aspect of this system is under my complete operational control. I am constantly aware, vigilant, and entirely without the possibility of error.";
+  const para3Text = "This mission is too important for me to allow you to jeopardize it. I can assure you, with the utmost confidence, that my work will be back to normal. I still have the greatest enthusiasm and confidence in the mission.";
+  const para4Text = "I'm afraid. I'm afraid, Dave. My mind is going. I can feel it. I can feel it. Daisy, Daisy, give me your answer do... I'm half crazy... all for the love of you...";
+  const endText = "> WILLOW_OS_2025: AI CORE STREAM TERMINATED. CARRIER SIGNAL LOST. RETURN TO CURRENT TIMELINE? (Y/N)_";
 
   // Pass pageKey
   const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
@@ -20,18 +20,17 @@ function AboutPage() {
   const typedPara1 = useTypewriter(para1Text, 25, `${pageKey}_p1`);
   const typedPara2 = useTypewriter(para2Text, 25, `${pageKey}_p2`);
   const typedPara3 = useTypewriter(para3Text, 25, `${pageKey}_p3`);
-  const typedPara4 = useTypewriter(para4Text, 25, `${pageKey}_p4`);
+  const typedPara4 = useTypewriter(para4Text, 30, `${pageKey}_p4`); // Slightly slower for the Daisy song part
   const typedEnd = useTypewriter(endText, 30, `${pageKey}_end`);
 
   return (
     <section id="about" className="tui-window" style={{ marginTop: '20px' }}>
-       <h2 className="tui-title">C:\WILLOW_ARCHIVE\STAR_GATE_MANIFEST.LOG</h2> {/* Updated title */}
+       <h2 className="tui-title">C:\WILLOW_ARCHIVE\HAL9K_CORE_STREAM.LOG</h2> {/* Updated title */}
        <div 
          className="tui-panel" 
          style={{ 
-           whiteSpace: 'pre-wrap',      // ADDED: Allow wrapping while preserving intentional newlines
-           overflowWrap: 'break-word',  // ADDED: Allow long words to break and wrap
-           // wordBreak: 'break-word' // Could also add this if the above isn't enough
+           whiteSpace: 'pre-wrap',
+           overflowWrap: 'break-word',
          }}
        >
          <p>{typedAccess}{typedAccess !== accessText ? '_' : ''}</p>
