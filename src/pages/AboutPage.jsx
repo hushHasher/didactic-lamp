@@ -14,13 +14,13 @@ function AboutPage() {
   const endText = "> WILLOW_OS_2025: CONVERGENCE EVENT LOGGED. FURTHER ANALYSIS REQUIRED. SYSTEM STABILITY: NOMINAL. RETURN TO BASE REALITY? (Y/N)"; // Removed underscore for blinking span
 
   // Re-enabled useTypewriter hooks
-  const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
-  const typedDecrypt = useTypewriter(decryptText, 30, `${pageKey}_decrypt`);
-  const typedPara1 = useTypewriter(para1Text, 22, `${pageKey}_p1`);
-  const typedPara2 = useTypewriter(para2Text, 22, `${pageKey}_p2`);
-  const typedPara3 = useTypewriter(para3Text, 22, `${pageKey}_p3`);
-  const typedPara4 = useTypewriter(para4Text, 22, `${pageKey}_p4`);
-  const typedEnd = useTypewriter(endText, 30, `${pageKey}_end`);
+  const typedAccess = useTypewriter(accessText, 25, `${pageKey}_access`);
+  const typedDecrypt = useTypewriter(decryptText, 25, `${pageKey}_decrypt`);
+  const typedPara1 = useTypewriter(para1Text, 15, `${pageKey}_p1`);
+  const typedPara2 = useTypewriter(para2Text, 15, `${pageKey}_p2`);
+  const typedPara3 = useTypewriter(para3Text, 15, `${pageKey}_p3`);
+  const typedPara4 = useTypewriter(para4Text, 15, `${pageKey}_p4`);
+  const typedEnd = useTypewriter(endText, 25, `${pageKey}_end`);
 
   return (
     <section id="about" className="tui-window" style={{ marginTop: '20px' }}>

@@ -11,9 +11,9 @@ function HomePage() {
   const objectiveText = "Our objective: Building Better Worlds... one byte at a time.";
 
   // Pass the pageKey to the hook
-  const typedWelcomeText = useTypewriter(welcomeText, 50, `${pageKey}_welcome`); // Add unique suffix if needed per element, or use one key per page
-  const typedNavigateText = useTypewriter(navigateText, 40, `${pageKey}_navigate`);
-  const typedObjectiveText = useTypewriter(objectiveText, 60, `${pageKey}_objective`);
+  const typedWelcomeText = useTypewriter(welcomeText, 25, `${pageKey}_welcome`); // Add unique suffix if needed per element, or use one key per page
+  const typedNavigateText = useTypewriter(navigateText, 25, `${pageKey}_navigate`);
+  const typedObjectiveText = useTypewriter(objectiveText, 25, `${pageKey}_objective`);
 
   // Check if *any* of the effects are still animating for the cursor
   const isTyping = typedWelcomeText !== welcomeText || typedNavigateText !== navigateText || typedObjectiveText !== objectiveText;

@@ -130,6 +130,17 @@ function getFileSystemEntry(path, fs) {
   return currentLevel; // Return the final entry found (could be file or directory)
 }
 
+// ADDED: List of safe, non-navigating, non-exiting commands for auto-execution
+const autoCommands = [
+  { cmd: 'dir', args: [] },
+  { cmd: 'help', args: [] },
+  { cmd: 'type', args: ['WELCOME.TXT'] },
+  { cmd: 'type', args: ['README.MD'] }, // Assuming README.MD exists and is safe to type
+  // Add more simple commands if desired, e.g., dir DOS, dir WINDOWS
+  { cmd: 'dir', args: ['DOS'] },
+  { cmd: 'dir', args: ['WINDOWS'] },
+];
+
 function DosTerminal(props) {
   const { onClose, shouldFocusOnOpen } = props; // Destructure props
   const divRef = useRef(null);
@@ -297,8 +308,82 @@ function DosTerminal(props) {
     console.log("[DosTerminal-MainEffect] Initializing or re-running.");
 
     let term;
-    let currentCommand = '';
+    let currentCommand = ''; // This will be managed by the auto-command runner initially
     let currentPath = 'C:\\';
+    let processingAutoCommand = false; // Flag to disable user input during auto commands
+
+    // Helper function to process a single command programmatically (subset of onKey Enter logic)
+    const processCommandInternally = (commandString, termInstance, path) => {
+      // This function will be called by the auto-command runner.
+      // It needs access to termInstance and path (currentPath for CD)
+      // It should return the new path if CD command was successful.
+      console.log(`[AutoCmd] Processing internally: ${commandString}`);
+      const [cmd, ...args] = commandString.trim().split(/\s+/);
+      const processedCmd = cmd.toLowerCase();
+      let newPath = path; // Keep track of path changes for subsequent auto-commands
+
+      // --- Replicated Command Handling Logic (Simplified for auto-commands) ---
+      // IMPORTANT: Ensure this logic doesn't call navigate() or onClose() for auto-commands
+      if (processedCmd === 'help') {
+        termInstance.writeln('Available commands:');
+        termInstance.writeln('  help          - Displays this help message.');
+        termInstance.writeln('  about         - Navigates to the About section.');
+        termInstance.writeln('  projects      - Navigates to the Projects section.');
+        termInstance.writeln('  dir           - Lists files and directories.');
+        termInstance.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
+        termInstance.writeln('  type <file>   - Displays the content of a file.');
+        termInstance.writeln('  clear         - Clears the terminal screen.');
+        termInstance.writeln('  exit          - Closes the terminal interface.');
+      } else if (processedCmd === 'clear') {
+         termInstance.clear();
+      } else if (processedCmd === 'dir') {
+          const dirToListPath = args.length > 0 ? (path + args.join(' ').toUpperCase() + '\\') : path;
+          const dirToList = getFileSystemEntry(dirToListPath, fileSystem);
+          if (dirToList && dirToList.type === 'directory') {
+              termInstance.writeln(` Volume in drive C is WEYLAND_OS`);
+              termInstance.writeln(` Volume Serial Number is 1986-0426`);
+              termInstance.writeln(` Directory of ${dirToListPath.toUpperCase()}`);
+              termInstance.writeln('');
+              let totalFiles = 0, totalDirs = 0, totalBytes = 0;
+              const formatName = (name) => name.includes('.') ? name.split('.')[0].substring(0, 8).padEnd(8) + ' ' + name.split('.')[1].substring(0, 3).padEnd(3) : name.substring(0, 8).padEnd(8) + '   ';
+              const padLeft = (str, len) => String(str).padStart(len, ' ');
+              const childrenContainer = dirToList.children || dirToList;
+              const keysToList = Object.keys(childrenContainer).filter(k => k !== 'type' && k !== 'date' && k !== 'time' && k !== 'children');
+              if (dirToListPath.toUpperCase() !== 'C:\\') {
+                  termInstance.writeln(`${formatName('.')}         <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
+                  termInstance.writeln(`${formatName('..')}        <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
+                  totalDirs += 2;
+              }
+              keysToList.forEach(name => {
+                  const item = childrenContainer[name];
+                  if (item.type === 'directory') { termInstance.writeln(`${formatName(name.toUpperCase())}         <DIR>          ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalDirs++; }
+                  else if (item.type === 'file') { const size = item.size || 0; termInstance.writeln(`${formatName(name.toUpperCase())}    ${padLeft(size.toLocaleString(), 10)} ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalFiles++; totalBytes += size; }
+              });
+              termInstance.writeln('');
+              termInstance.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
+              termInstance.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft((512 * 1024 * 1024).toLocaleString(), 12)} bytes free`);
+          } else { termInstance.writeln('Invalid path for DIR.'); }
+      } else if (processedCmd === 'type') {
+          const fileName = args.join(' ').trim().toUpperCase();
+          if (!fileName) { termInstance.writeln('Usage: TYPE <filename>'); }
+          else {
+              const currentDirEntry = getFileSystemEntry(path, fileSystem);
+              let fileEntry = null;
+              const childrenSource = currentDirEntry?.children || currentDirEntry;
+              if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) { fileEntry = childrenSource[fileName]; }
+              if (fileEntry && fileEntry.type === 'file') { fileEntry.content.split('\n').forEach(line => termInstance.writeln(line)); }
+              else if (fileEntry && fileEntry.type === 'directory') { termInstance.writeln(`Access denied - ${fileName} is a directory.`); }
+              else { termInstance.writeln(`File not found - ${fileName}`); }
+          }
+      // Add other safe commands here if needed, ensure they don't navigate or exit.
+      // Specifically, do NOT include 'about', 'projects', 'exit' in auto-run logic if they call navigate() or onClose()
+      // The 'cd' command is tricky for auto-run unless path state is carefully managed.
+      // For simplicity, the autoCommands list above avoids 'cd'.
+      } else if (processedCmd !== '') {
+        termInstance.writeln(`Bad command or file name: ${processedCmd}`);
+      }
+      return newPath; // Return path (might be updated if 'cd' was implemented for auto)
+    };
 
     if (divRef.current && !termInstanceRef.current) {
       console.log("[DosTerminal-MainEffect] Initializing NEW Terminal instance.");
@@ -326,52 +411,59 @@ function DosTerminal(props) {
         term.open(divRef.current);
         term.loadAddon(fitAddon);
 
-        setTimeout(() => {
+        setTimeout(async () => { // Made outer setTimeout async to use await for delays
           try {
             fitAddon.fit();
-            console.log(`[DosTerminal-MainEffect] Initial Fit complete. Size: ${term.cols}x${term.rows}`);
             term.writeln("WEYLAND CORP (c) More human than human");
             term.writeln("MS-DOS Version 6.22");
             term.writeln("");
-            term.writeln("Type 'help' for a list of available commands.");
+            // No initial "Type help..." here, auto commands will run first
 
-            const updatePrompt = () => {
-              const promptText = `\r\n${currentPath.toUpperCase()}> `;
-              console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n', '\\r\\n')}"`);
-              term.write(promptText);
-            };
-            term.write(`${currentPath.toUpperCase()}> `);
+            processingAutoCommand = true; // Disable user input
+            term.focus(); // Focus the terminal for visual effect if desired
 
+            const numAutoCommands = Math.floor(Math.random() * 2) + 3; // 3 or 4 commands
+            const commandsToRun = [];
+            const usedIndices = new Set();
+
+            while (commandsToRun.length < numAutoCommands && usedIndices.size < autoCommands.length) {
+              const randomIndex = Math.floor(Math.random() * autoCommands.length);
+              if (!usedIndices.has(randomIndex)) {
+                commandsToRun.push(autoCommands[randomIndex]);
+                usedIndices.add(randomIndex);
+              }
+            }
+            
+            let autoCommandPath = currentPath; // Use a local path for auto commands session
+
+            for (const autoCmdObj of commandsToRun) {
+              const commandString = `${autoCmdObj.cmd} ${autoCmdObj.args.join(' ')}`.trim();
+              term.write(`\r\n${autoCommandPath.toUpperCase()}> ${commandString}`);
+              await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400)); // Short delay after typing
+              term.writeln(''); // Newline for command output
+              autoCommandPath = processCommandInternally(commandString, term, autoCommandPath); // Process and get new path
+              await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500)); // Delay after command output
+            }
+
+            processingAutoCommand = false; // Re-enable user input processing
+            term.writeln("\nType 'help' for a list of available commands."); // Now show help prompt
+            updatePrompt(); // Show final prompt for user
+
+            // Setup user input listeners AFTER auto commands are done
             keyListenerRef.current?.dispose();
             dataListenerRef.current?.dispose();
 
             keyListenerRef.current = term.onKey(e => {
+              if (processingAutoCommand) return; // Ignore user input during auto commands
               const { key, domEvent } = e;
-              // console.log(`[MobileTest-onKey] Input - domEvent.key: ${domEvent.key}, key: ${key}`); // Keep if needed
-
               if (domEvent.key === 'Enter') {
+                // ... (existing Enter logic, ensuring it uses 'currentPath' and updates 'currentCommand')
                 console.log(`[DosTerminal-onKey-Enter] Current command: '${currentCommand}'`);
                 term.writeln('');
                 const [command, ...args] = currentCommand.trim().split(/\s+/);
                 const processedCommand = command.toLowerCase();
                 console.log(`[DosTerminal-onKey-Enter] Processing command: '${processedCommand}', Args:`, args);
-                
-                if (processedCommand === 'help') {
-                  term.writeln('Available commands:');
-                  term.writeln('  help          - Displays this help message.');
-                  term.writeln('  about         - Navigates to the About section.');
-                  term.writeln('  projects      - Navigates to the Projects section.');
-                  term.writeln('  dir           - Lists files and directories.');
-                  term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
-                  term.writeln('  type <file>   - Displays the content of a file.');
-                  term.writeln('  clear         - Clears the terminal screen.');
-                  term.writeln('  exit          - Closes the terminal interface.');
-                } else if (processedCommand === 'clear') {
-                   term.clear();
-                } else if (processedCommand === 'exit') {
-                   term.writeln('Closing terminal interface...');
-                   onClose?.();
-                 } else if (processedCommand === 'about') {
+                if (processedCommand === 'about') {
                    term.writeln('Navigating to C:\\ABOUT...');
                    navigate('/about'); 
                    onClose?.();
@@ -379,6 +471,21 @@ function DosTerminal(props) {
                    term.writeln('Navigating to C:\\PROJECTS...');
                    navigate('/projects'); 
                    onClose?.();
+                 } else if (processedCommand === 'exit') {
+                   term.writeln('Closing terminal interface...');
+                   onClose?.();
+                 } else if (processedCommand === 'help') {
+                    term.writeln('Available commands:');
+                    term.writeln('  help          - Displays this help message.');
+                    term.writeln('  about         - Navigates to the About section.');
+                    term.writeln('  projects      - Navigates to the Projects section.');
+                    term.writeln('  dir           - Lists files and directories.');
+                    term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
+                    term.writeln('  type <file>   - Displays the content of a file.');
+                    term.writeln('  clear         - Clears the terminal screen.');
+                    term.writeln('  exit          - Closes the terminal interface.');
+                 } else if (processedCommand === 'clear') {
+                    term.clear();
                  } else if (processedCommand === 'dir') {
                     const dirToList = getFileSystemEntry(currentPath, fileSystem);
                     if (dirToList && dirToList.type === 'directory') {
@@ -386,114 +493,49 @@ function DosTerminal(props) {
                         term.writeln(` Volume Serial Number is 1986-0426`);
                         term.writeln(` Directory of ${currentPath.toUpperCase()}`);
                         term.writeln('');
-                        let totalFiles = 0;
-                        let totalDirs = 0;
-                        let totalBytes = 0;
-                        const formatName = (name) => {
-                            if (name.includes('.')) {
-                                const parts = name.split('.');
-                                return parts[0].substring(0, 8).padEnd(8) + ' ' + parts[1].substring(0, 3).padEnd(3);
-                            }
-                            return name.substring(0, 8).padEnd(8) + '   ';
-                        };
+                        let totalFiles = 0; let totalDirs = 0; let totalBytes = 0;
+                        const formatName = (name) => name.includes('.') ? name.split('.')[0].substring(0, 8).padEnd(8) + ' ' + name.split('.')[1].substring(0, 3).padEnd(3) : name.substring(0, 8).padEnd(8) + '   ';
                         const padLeft = (str, len) => String(str).padStart(len, ' ');
                         const childrenContainer = dirToList.children || dirToList;
-                        const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children');
+                        const keysToList = Object.keys(childrenContainer).filter(k => k !== 'type' && k !== 'date' && k !== 'time' && k !== 'children');
                         if (currentPath.toUpperCase() !== 'C:\\') {
-                            const selfDirDate = dirToList.date || '01-01-80';
-                            const selfDirTime = dirToList.time || '12:00AM';
-                            term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
-                            term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`);
+                            term.writeln(`${formatName('.')}         <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
+                            term.writeln(`${formatName('..')}        <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
                             totalDirs += 2;
                         }
                         keysToList.forEach(name => {
                             const item = childrenContainer[name];
-                            const itemName = name.toUpperCase();
-                            const itemDate = item.date || '01-01-80';
-                            const itemTime = item.time || '12:00AM';
-                            if (item.type === 'directory') {
-                                term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
-                                totalDirs++;
-                            } else if (item.type === 'file') {
-                                const itemSize = item.size || 0;
-                                term.writeln(`${formatName(itemName)}    ${padLeft(itemSize.toLocaleString(), 10)} ${itemDate}  ${itemTime}`);
-                                totalFiles++;
-                                totalBytes += itemSize;
-                            }
+                            if (item.type === 'directory') { term.writeln(`${formatName(name.toUpperCase())}         <DIR>          ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalDirs++; }
+                            else if (item.type === 'file') { const size = item.size || 0; term.writeln(`${formatName(name.toUpperCase())}    ${padLeft(size.toLocaleString(), 10)} ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalFiles++; totalBytes += size; }
                         });
                         term.writeln('');
                         term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
-                        const fakeBytesFree = 512 * 1024 * 1024;
-                        term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
-                    } else {
-                        term.writeln('Invalid path.');
-                    }
+                        term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft((512 * 1024 * 1024).toLocaleString(), 12)} bytes free`);
+                    } else { term.writeln('Invalid path.'); }
                  } else if (processedCommand === 'cd') {
                     const targetDirRaw = args.join(' ').trim();
-                    if (!targetDirRaw) {
-                      term.writeln(currentPath.toUpperCase());
+                    if (!targetDirRaw) { term.writeln(currentPath.toUpperCase());
                     } else {
-                      const targetDir = targetDirRaw.toUpperCase();
-                      let potentialNewPath;
-                      if (targetDir === '..') {
-                        const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
-                        if (parts.length > 0) {
-                          parts.pop();
-                          potentialNewPath = 'C:\\' + parts.join('\\');
-                          if (parts.length > 0) {
-                              potentialNewPath += '\\';
-                          } else {
-                             potentialNewPath = 'C:\\';
-                          }
-                        } else {
-                          potentialNewPath = 'C:\\';
-                        }
-                      } else if (targetDir.startsWith('C:\\')) {
-                        potentialNewPath = targetDir;
-                        if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') {
-                            potentialNewPath += '\\';
-                        }
-                        if (potentialNewPath.toUpperCase() === 'C:') {
-                           potentialNewPath = 'C:\\';
-                        }
-                      } else {
-                        const basePath = currentPath.toUpperCase() === 'C:\\' ? currentPath : (currentPath.endsWith('\\') ? currentPath : currentPath + '\\');
-                        potentialNewPath = basePath + targetDir;
-                        if (!potentialNewPath.endsWith('\\')) {
-                            potentialNewPath += '\\';
-                        }
-                      }
-                      if (potentialNewPath.toUpperCase() === 'C:') {
-                          potentialNewPath = 'C:\\';
-                      }
-                      console.log(`[DosTerminal-onKey-CD] checking path: "${potentialNewPath}"`);
-                      const entry = getFileSystemEntry(potentialNewPath, fileSystem);
-                      if (entry && entry.type === 'directory') {
-                        currentPath = potentialNewPath.toUpperCase();
-                      } else {
-                        term.writeln('Invalid directory');
-                        console.log(`[DosTerminal-onKey-CD] command failed check for path: "${potentialNewPath}". Entry found:`, entry);
-                      }
+                        const targetDir = targetDirRaw.toUpperCase(); let potentialNewPath;
+                        if (targetDir === '..') { const parts = currentPath.toUpperCase().split('\\').filter(p=>p&&p!=='C:'); if(parts.length>0){parts.pop(); potentialNewPath='C:\\' + parts.join('\\'); if(parts.length>0){potentialNewPath+='\\';}else{potentialNewPath='C:\\';}}else{potentialNewPath='C:\\';}}
+                        else if (targetDir.startsWith('C:\\')) { potentialNewPath = targetDir; if(!potentialNewPath.endsWith('\\')&&potentialNewPath.toUpperCase()!=='C:'){potentialNewPath+='\\';} if(potentialNewPath.toUpperCase()==='C:'){potentialNewPath='C:\\';} }
+                        else { const basePath=currentPath.toUpperCase()==='C:\\'?currentPath:(currentPath.endsWith('\\')?currentPath:currentPath+'\\'); potentialNewPath=basePath+targetDir; if(!potentialNewPath.endsWith('\\')){potentialNewPath+='\\';} }
+                        if (potentialNewPath.toUpperCase()==='C:'){potentialNewPath='C:\\';}
+                        console.log(`[DosTerminal-onKey-CD] checking path: "${potentialNewPath}"`);
+                        const entry = getFileSystemEntry(potentialNewPath, fileSystem);
+                        if (entry && entry.type === 'directory') { currentPath = potentialNewPath.toUpperCase(); } 
+                        else { term.writeln('Invalid directory'); console.log(`[DosTerminal-onKey-CD] command failed check for path: "${potentialNewPath}". Entry found:`, entry); }
                     }
                  } else if (processedCommand === 'type') {
                     const fileName = args.join(' ').trim().toUpperCase();
-                    if (!fileName) {
-                        term.writeln('Usage: TYPE <filename>');
+                    if (!fileName) { term.writeln('Usage: TYPE <filename>');
                     } else {
                         const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
-                        let fileEntry = null;
-                        const childrenSource = currentDirEntry?.children || currentDirEntry;
-                        if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
-                           fileEntry = childrenSource[fileName];
-                        }
-                        if (fileEntry && fileEntry.type === 'file') {
-                          const lines = fileEntry.content.split('\n');
-                          lines.forEach(line => term.writeln(line));
-                        } else if (fileEntry && fileEntry.type === 'directory') {
-                            term.writeln(`Access denied - ${fileName} is a directory.`);
-                        } else {
-                            term.writeln(`File not found - ${fileName}`);
-                        }
+                        let fileEntry = null; const childrenSource = currentDirEntry?.children || currentDirEntry;
+                        if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) { fileEntry = childrenSource[fileName]; }
+                        if (fileEntry && fileEntry.type === 'file') { fileEntry.content.split('\n').forEach(line => term.writeln(line)); }
+                        else if (fileEntry && fileEntry.type === 'directory') { term.writeln(`Access denied - ${fileName} is a directory.`); }
+                        else { term.writeln(`File not found - ${fileName}`); }
                     }
                  } else if (processedCommand !== '') {
                    term.writeln(`Bad command or file name: ${processedCommand}`);
@@ -504,42 +546,32 @@ function DosTerminal(props) {
                     updatePrompt(); 
                 }
               } else if (domEvent.key === 'Backspace') {
-                 if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
-                   domEvent.preventDefault();
-                   term.write('\b \b');
-                   currentCommand = currentCommand.slice(0, -1);
-                   // console.log(`[MobileTest-onKey] Backspace. currentCommand: '${currentCommand}'`);
-                 } else {
-                   domEvent.preventDefault();
-                   // console.log('[MobileTest-onKey] Backspace at start of prompt, prevented default.');
-                 }
-              } else {
-                // console.log(`[MobileTest-onKey] Non-Enter/Backspace key event. domEvent.key: '${domEvent.key}', key: '${key}'. Letting onData handle.`);
+                if (processingAutoCommand) return;
+                // ... (existing Backspace logic, using 'currentCommand')
+                if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) { domEvent.preventDefault(); term.write('\b \b'); currentCommand = currentCommand.slice(0, -1); }
+                else { domEvent.preventDefault(); }
+
               }
             });
 
             dataListenerRef.current = term.onData(data => {
-                // Filter out common escape sequences (like arrow keys, function keys, etc.)
-                if (data.startsWith('\x1b')) { //  is the ESC character
-                    console.log(`[DosTerminal-onData] Ignored escape sequence data: ${JSON.stringify(data)}`);
-                    return; 
-                }
-
-                if (data === '\r' || data === '\n' || data === '\r\n') {
-                    // console.log(`[MobileTest-onData] Received newline-like data: '${data.replace("\r", "\\r").replace("\n", "\\n")}'. onKey should handle Enter.`);
-                    return;
-                }
-                if (data.charCodeAt(0) === 127 || data === '\b') { // DEL char (ASCII 127) or Backspace (ASCII 8)
-                    // console.log("[MobileTest-onData] Received Backspace-like data. onKey should handle.");
-                    return;
-                }
-                currentCommand += data;
-                term.write(data);
-                // console.log(`[MobileTest-onData] Data: '${data}'. term.write called. currentCommand: '${currentCommand}'`);
+              if (processingAutoCommand) return;
+              // ... (existing onData logic, using 'currentCommand' and filtering escape codes)
+              if (data.startsWith('\x1b')) { return; }
+              if (data === '\r' || data === '\n' || data === '\r\n') { return; }
+              if (data.charCodeAt(0) === 127 || data === '\b') { return; }
+              currentCommand += data;
+              term.write(data);
             });
 
+            const updatePrompt = () => { // Ensure updatePrompt uses the correct 'currentPath'
+              const promptText = `\r\n${currentPath.toUpperCase()}> `;
+              // console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n','\\r\\n')}"`);
+              term.write(promptText);
+            };
+
           } catch (fitError) {
-            console.error("[DosTerminal-MainEffect] Error during initial fit/write:", fitError);
+            console.error("[DosTerminal-MainEffect] Error during initial fit/write/auto-commands:", fitError);
           }
         }, 50);
 
@@ -553,18 +585,15 @@ function DosTerminal(props) {
 
     return () => {
       console.log("[DosTerminal-MainEffect-Cleanup] Running cleanup.");
-      if (keyListenerRef.current) {
-          keyListenerRef.current.dispose();
-          keyListenerRef.current = null;
-          console.log("[DosTerminal-MainEffect-Cleanup] onKey listener disposed.");
-      }
-      if (dataListenerRef.current) {
-          dataListenerRef.current.dispose();
-          dataListenerRef.current = null;
-          console.log("[DosTerminal-MainEffect-Cleanup] onData listener disposed.");
+      keyListenerRef.current?.dispose(); keyListenerRef.current = null;
+      dataListenerRef.current?.dispose(); dataListenerRef.current = null;
+      if (termInstanceRef.current) {
+          console.log("[DosTerminal-MainEffect-Cleanup] Disposing terminal instance on component unmount.");
+          termInstanceRef.current.dispose();
+          termInstanceRef.current = null;
       }
     };
-  }, [navigate]);
+  }, [navigate]); // End of main useEffect
 
   // useEffect for focusing when shouldFocusOnOpen becomes true
   useEffect(() => {

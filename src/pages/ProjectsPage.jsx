@@ -37,8 +37,8 @@ function ProjectsPage() {
   const intro2Text = "Listing recovered development titles:";
 
   // Pass pageKey
-  const typedIntro1 = useTypewriter(intro1Text, 40, `${pageKey}_intro1`);
-  const typedIntro2 = useTypewriter(intro2Text, 40, `${pageKey}_intro2`);
+  const typedIntro1 = useTypewriter(intro1Text, 25, `${pageKey}_intro1`);
+  const typedIntro2 = useTypewriter(intro2Text, 25, `${pageKey}_intro2`);
 
   // Check if *both* are fully displayed (whether animated or not)
   const introComplete = typedIntro1 === intro1Text && typedIntro2 === intro2Text;
