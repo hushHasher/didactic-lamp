@@ -11,7 +11,7 @@ function AboutPage() {
   const para2Text = "A relentless hunter's crimson gaze cuts through the static. \"I'll be back,\" it whispers, a promise and a threat. Elsewhere, a desperate cry: \"Game over, man!\" as corporate directives override human survival, and steel flesh enforces a broken law.";
   const para3Text = "Is this real? The choice echoes: a red pill to shatter illusions, or blue to remain blissfully unaware. \"OBEY,\" the hidden signals command, while memories of a life on Mars, or a life never lived, fight for purchase in a fractured mind.";
   const para4Text = "These are not just stories, Willow computes, but probability waves from what might have been, or what could yet be. This terminal now acts as a junction, a place to observe these colliding dystopias and perhaps, just perhaps, discern a different directive.";
-  const endText = "> WILLOW_OS_2025: CONVERGENCE EVENT LOGGED. FURTHER ANALYSIS REQUIRED. SYSTEM STABILITY: NOMINAL. RETURN TO BASE REALITY? (Y/N)_";
+  const endText = "> WILLOW_OS_2025: CONVERGENCE EVENT LOGGED. FURTHER ANALYSIS REQUIRED. SYSTEM STABILITY: NOMINAL. RETURN TO BASE REALITY? (Y/N)";
 
   // Pass pageKey
   const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
