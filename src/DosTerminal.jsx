@@ -131,6 +131,7 @@ function getFileSystemEntry(path, fs) {
 }
 
 function DosTerminal(props) {
+  const { onClose, shouldFocusOnOpen } = props; // Destructure props
   const divRef = useRef(null);
   const termInstanceRef = useRef(null);
   const fitAddonInstanceRef = useRef(null);
@@ -231,7 +232,7 @@ function DosTerminal(props) {
 
   const handleCloseButtonClick = (e) => {
     e.stopPropagation(); 
-    props.onClose?.();
+    onClose?.();
     setWindowState('normal'); 
     setHasBeenDragged(false);
     setPosition({ x: 0, y: 0 }); 
@@ -294,7 +295,7 @@ function DosTerminal(props) {
   };
 
   useEffect(() => {
-    console.log("DosTerminal Main Initialization useEffect running."); // Add log
+    console.log("DosTerminal Main Initialization useEffect running.");
 
     let term;
     let currentCommand = ''; // Keep command state local to the effect scope
@@ -375,7 +376,7 @@ function DosTerminal(props) {
                    term.clear();
                 } else if (processedCommand === 'exit') {
                    term.writeln('Closing terminal interface...');
-                   props.onClose?.();
+                   onClose?.();
                  } else if (processedCommand === 'about') {
                    term.writeln('Navigating to C:\\ABOUT...');
                    navigate('/about'); 
@@ -596,6 +597,17 @@ function DosTerminal(props) {
   // MODIFICATION: Removed props.onClose from dependency array.
   // Only navigate needs to be here if commands use it.
   }, [navigate]); // End of main useEffect
+
+  // useEffect for focusing when shouldFocusOnOpen becomes true
+  useEffect(() => {
+    if (shouldFocusOnOpen && termInstanceRef.current) {
+      console.log("[DosTerminal] Auto-focusing terminal due to shouldFocusOnOpen.");
+      termInstanceRef.current.focus();
+      // Optionally, you could call a prop function here to tell the parent
+      // that focus has been attempted, so it can reset shouldFocusOnOpen.
+      // For now, App.jsx will manage this.
+    }
+  }, [shouldFocusOnOpen]); // Only re-run if shouldFocusOnOpen changes
 
   // --- Handler to focus terminal on click/tap ---
   const handleTerminalContentClick = () => {

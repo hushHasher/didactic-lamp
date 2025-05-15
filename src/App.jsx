@@ -18,13 +18,18 @@ function App() {
   const [showTerminal, setShowTerminal] = useState(false);
   // State for Mobile Menu Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [focusTerminalNextOpen, setFocusTerminalNextOpen] = useState(false); // ADDED: State for focus trigger
 
   // Wrap toggleTerminal with useCallback to give it a stable identity
   const toggleTerminal = useCallback(() => {
-    setShowTerminal(prevState => !prevState);
-    // No dependencies needed inside useCallback's array, as it only uses setShowTerminal
-    // which is guaranteed stable by React.
-  }, []); // Empty dependency array means the function reference never changes
+    setShowTerminal(prevState => {
+      const nextState = !prevState;
+      if (nextState) { // If terminal is being opened
+        setFocusTerminalNextOpen(true);
+      }
+      return nextState;
+    });
+  }, []);
 
   // Handler to toggle mobile menu
   const toggleMobileMenu = useCallback(() => { // Also good practice to wrap this
@@ -38,16 +43,24 @@ function App() {
 
   // Function to handle CLI toggle from mobile menu
   const toggleTerminalAndMenu = useCallback(() => { // And this
-    // Make sure toggleTerminal is stable before calling it here
+    // setShowTerminal will trigger focusTerminalNextOpen logic via toggleTerminal
     toggleTerminal();
     closeMobileMenu();
-     // Depends on toggleTerminal and closeMobileMenu, which are now stable
   }, [toggleTerminal, closeMobileMenu]);
 
   // ADDED: Callback for when boot sequence is complete
   const handleBootComplete = useCallback(() => {
     setBooting(false);
   }, []);
+
+  // ADDED: useEffect to reset focusTerminalNextOpen after it has been consumed
+  useEffect(() => {
+    if (showTerminal && focusTerminalNextOpen) {
+      // After DosTerminal has received shouldFocusOnOpen={true} and (presumably) acted on it,
+      // reset the trigger so it doesn't re-focus on subsequent App re-renders while terminal is still open.
+      setFocusTerminalNextOpen(false);
+    }
+  }, [showTerminal, focusTerminalNextOpen]);
 
   // ADDED: Conditional rendering for boot sequence
   if (booting) {
@@ -136,7 +149,7 @@ function App() {
       {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
       {showTerminal && (
         <div className="terminal-container">
-          <DosTerminal onClose={toggleTerminal} />
+          <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
         </div>
       )}
 
