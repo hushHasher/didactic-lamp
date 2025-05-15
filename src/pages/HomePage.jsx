@@ -50,7 +50,7 @@ function HomePage() {
         </p>
         <br />
         {/* Show prompt only after typing is done? Or keep it static? Let's keep static for now */}
-        <p>C:\HOME&gt; _</p>
+        <p>C:\HOME&gt;<span className="blinking-cursor-element">_</span></p>
       </div>
     </div>
   );

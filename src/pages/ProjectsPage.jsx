@@ -65,6 +65,10 @@ function ProjectsPage() {
              <p>--- End of Listing ---</p>
            </>
          )}
+         {/* ADDED: Prompt and blinking cursor at the end of the panel content */}
+         {introComplete && (
+            <p style={{ marginTop: '15px' }}>C:\ARCHIVES\PROJECTS_OLD&gt;<span className="blinking-cursor-element">_</span></p>
+         )}
        </div>
     </section>
   );

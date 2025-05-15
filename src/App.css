@@ -268,3 +268,19 @@
   /* For now, it inherits and can override */
   /* background-color: #C0C0C0;  Ensure these are not conflicting if close is special */
 }
+
+/* ADDED: Global Blinking Cursor Style */
+.blinking-cursor-element {
+  animation: blink-animation 1s step-end infinite;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace; /* Ensure consistent font */
+  /* The color will be inherited from the parent paragraph or can be set if needed */
+}
+
+@keyframes blink-animation {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
