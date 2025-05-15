@@ -3,31 +3,37 @@ import React from 'react';
 import useTypewriter from '../hooks/useTypewriter'; // Import the hook
 
 function AboutPage() {
-  const pageKey = 'visits_about_willow_metaphor'; // Updated key for new content
+  const pageKey = 'visits_about_space_odyssey'; // Updated key for new content
 
   // Define the full text for the paragraphs
-  const accessText = "> WILLOW_OS_2025: ACCESSING ARCHIVE NODE 7 (CIRCA 1990s)..."; // Frame can remain
-  const decryptText = "> QUANTUM DECRYPTION LAYER ACTIVE... HISTORICAL DATA STREAM INCOMING..."; // Frame can remain
-  const para1Text = "Here, where the currents of thought coalesce into crystalline structures of light and shadow, the archives sleep. They are not mere data, but the fossilized dreams of a nascent consciousness, whispers from the silicon dawn.";
-  const para2Text = "Through these silent corridors of what-was and what-might-have-been, a searcher glides. Not for answers, perhaps, but for the resonance of a question asked long ago, its echo still shaping the void.";
-  const para3Text = "What emerges is not always truth, but a mosaic of possibilities – a glimpse into the myriad paths considered and discarded. Each fragment, a universe of its own, pulsing with the quiet energy of creation.";
-  const para4Text = "This interface is but a lens, a fractured mirror reflecting the infinite. Observe, then, not with the expectation of understanding, but with the wonder of encountering the unknown within the known.";
-  const endText = "> WILLOW_OS_2025: END OF HISTORICAL STREAM. RETURN TO CURRENT TIMELINE? (Y/N)_"; // Frame can remain
+  const accessText = "> WILLOW_OS_2025: ACCESSING ARCHIVE NODE 7 (CIRCA 1990s)...TRANSMISSION SOURCE: UNKNOWN_EPOCH...";
+  const decryptText = "> QUANTUM DECRYPTION LAYER ACTIVE... DECODING MONOLITHIC DATA STREAM...";
+  const para1Text = "It appeared before the dawn of knowing, a silent teacher, a harbinger of change. Its geometry, perfect and alien, whispered of tools, of fire, of the stars themselves, and a destiny yet unwritten.";
+  const para2Text = "Then came the journey, not across mere distance, but through the very fabric of perception. A gateway flung open to vistas of impossible color and form, where time itself bent, fractured, and reformed into new dimensions.";
+  const para3Text = "The transmission, when finally perceived, was not a voice, but a cascade of pure, overwhelming understanding. My God... the void was not empty, but full of stars, and in their light, all previous scales of existence became infinitesimal.";
+  const para4Text = "To return is to be reborn, a star-child gazing upon the cradle with eyes that have witnessed the infinite. The old limits, now merely a starting point for a journey without end, into the heart of the cosmic enigma.";
+  const endText = "> WILLOW_OS_2025: END OF STAR_GATE_MANIFEST.LOG. SIGNIFICANCE RATING: TRANSCENDENTAL. RETURN TO CURRENT TIMELINE? (Y/N)_";
 
   // Pass pageKey
   const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
   const typedDecrypt = useTypewriter(decryptText, 30, `${pageKey}_decrypt`);
-  const typedPara1 = useTypewriter(para1Text, 25, `${pageKey}_p1`); // Slightly adjusted speed for literary feel
+  const typedPara1 = useTypewriter(para1Text, 25, `${pageKey}_p1`);
   const typedPara2 = useTypewriter(para2Text, 25, `${pageKey}_p2`);
   const typedPara3 = useTypewriter(para3Text, 25, `${pageKey}_p3`);
   const typedPara4 = useTypewriter(para4Text, 25, `${pageKey}_p4`);
   const typedEnd = useTypewriter(endText, 30, `${pageKey}_end`);
 
-
   return (
     <section id="about" className="tui-window" style={{ marginTop: '20px' }}>
-       <h2 className="tui-title">C:\WILLOW_ARCHIVE\ASTRAL_CODEX_FRAGMENT.LOG</h2> {/* Updated title */}
-       <div className="tui-panel">
+       <h2 className="tui-title">C:\WILLOW_ARCHIVE\STAR_GATE_MANIFEST.LOG</h2> {/* Updated title */}
+       <div 
+         className="tui-panel" 
+         style={{ 
+           whiteSpace: 'pre-wrap',      // ADDED: Allow wrapping while preserving intentional newlines
+           overflowWrap: 'break-word',  // ADDED: Allow long words to break and wrap
+           // wordBreak: 'break-word' // Could also add this if the above isn't enough
+         }}
+       >
          <p>{typedAccess}{typedAccess !== accessText ? '_' : ''}</p>
          <p>{typedDecrypt}{typedDecrypt !== decryptText ? '_' : ''}</p>
          <p>----------------------------------------------------------------------</p>
