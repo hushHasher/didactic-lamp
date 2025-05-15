@@ -4,7 +4,7 @@
   min-height: 100vh; /* Ensure the App container fills viewport height */
   display: flex; /* Use flexbox to arrange Nav, Main, Footer */
   flex-direction: column; /* Stack them vertically */
-  font-family: sans-serif;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace; /* MODIFIED: Global DOS-like font */
 }
 
 /* MODIFIED: Added padding rule */
@@ -119,6 +119,25 @@
   position: relative; /* Needed for xterm viewport */
 }
 
+.dos-terminal-content::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    rgba(0, 0, 0, 0.2) 0px,
+    rgba(0, 0, 0, 0.2) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none; /* So it doesn't interfere with clicks */
+  z-index: 1; /* Ensure it's above the terminal text but below controls */
+}
+
 /* Ensure xterm itself fills the .dos-terminal-content correctly */
 /* Target the direct div child created by xterm.js */
 .dos-terminal-content > .terminal {
@@ -137,6 +156,9 @@
 .dos-terminal-content > .terminal .xterm-screen {
     width: 100% !important;
     height: 100% !important;
+    /* ADDED: Amber glow effect for terminal text. Assumes xterm.js renders text on a canvas. */
+    /* Adjust color and blur radius (2px) as needed. */
+    filter: drop-shadow(0 0 1px rgba(255, 176, 0, 0.7)) drop-shadow(0 0 2px rgba(255, 176, 0, 0.5));
 }
 
 /* --- Navbar Base Styles --- */

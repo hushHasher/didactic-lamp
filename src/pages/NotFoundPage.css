@@ -1,0 +1,52 @@
+/* src/pages/NotFoundPage.css */
+.not-found-container {
+  position: fixed; /* Cover the whole screen */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000; /* Black background */
+  color: #AAAAAA; /* Grey text, typical for DOS errors */
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  display: flex;
+  align-items: flex-start; /* Align text to the top */
+  justify-content: flex-start; /* Align text to the left */
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 9990; /* Below boot sequence if it ever got stuck, but above most other things */
+  overflow: auto; /* Allow scrolling if content is too long */
+  cursor: default; /* Show normal cursor here */
+}
+
+.not-found-content p {
+  margin: 0 0 5px 0;
+  line-height: 1.4;
+  font-size: 16px;
+}
+
+.not-found-link {
+  color: #FFFFFF; /* Bright white for the link */
+  text-decoration: underline;
+}
+
+.not-found-link:hover {
+  background-color: #AAAAAA;
+  color: #000000;
+}
+
+/* Blinking cursor style - can reuse from BootSequence or define here if different */
+.not-found-content .cursor {
+  background-color: #AAAAAA; /* Grey block cursor */
+  color: #000000; /* Text color inside cursor */
+  animation: blink-not-found 1s step-start infinite;
+  display: inline-block;
+  width: 0.6em;
+  margin-left: 2px;
+}
+
+@keyframes blink-not-found {
+  50% {
+    background-color: transparent;
+    color: transparent;
+  }
+} 

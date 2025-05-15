@@ -1,0 +1,46 @@
+/* src/components/BootSequence.css */
+.boot-sequence-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000; /* Black background */
+  color: #FFB000; /* Amber text - matching the glow idea */
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  display: flex;
+  align-items: flex-start; /* Align text to the top */
+  justify-content: flex-start; /* Align text to the left */
+  padding: 15px;
+  box-sizing: border-box;
+  z-index: 9999; /* Ensure it's on top of everything */
+  overflow: hidden; /* Hide scrollbars if content overflows briefly */
+  cursor: none; /* Hide the mouse cursor during boot */
+}
+
+.boot-text {
+  white-space: pre; /* Preserve whitespace strictly for alignment, newlines handled by divs */
+  font-size: 16px; /* Or your preferred DOS text size */
+  line-height: 1.3;
+  margin: 0;
+}
+
+.boot-text > div {
+  min-height: 1.3em; /* Ensure empty lines take up space */
+}
+
+.boot-text .cursor {
+  background-color: #FFB000; /* Amber block cursor */
+  color: #000000; /* Text color inside cursor, effectively making it a block */
+  animation: blink 1s step-start infinite;
+  display: inline-block; /* To allow background color */
+  width: 0.6em; /* Width of the cursor */
+  margin-left: 2px; /* Slight separation */
+}
+
+@keyframes blink {
+  50% {
+    background-color: transparent;
+    color: transparent;
+  }
+} 

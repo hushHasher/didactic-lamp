@@ -5,10 +5,15 @@ import DosTerminal from './DosTerminal';
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
+import NotFoundPage from './pages/NotFoundPage'; // ADDED: Import NotFoundPage
 import FooterClock from './components/FooterClock'; // Import the new component
+import BootSequence from './components/BootSequence'; // ADDED: Import BootSequence
 import './App.css'; // Main layout styles
 
 function App() {
+  // ADDED: State for boot sequence
+  const [booting, setBooting] = useState(true);
+
   // State for Terminal Visibility
   const [showTerminal, setShowTerminal] = useState(false);
   // State for Mobile Menu Toggle
@@ -38,6 +43,16 @@ function App() {
     closeMobileMenu();
      // Depends on toggleTerminal and closeMobileMenu, which are now stable
   }, [toggleTerminal, closeMobileMenu]);
+
+  // ADDED: Callback for when boot sequence is complete
+  const handleBootComplete = useCallback(() => {
+    setBooting(false);
+  }, []);
+
+  // ADDED: Conditional rendering for boot sequence
+  if (booting) {
+    return <BootSequence onBootComplete={handleBootComplete} />;
+  }
 
   return (
     <div className="App"> {/* Main layout container */}
@@ -108,6 +123,7 @@ function App() {
           <Route path="/projects" element={<ProjectsPage />} />
           {/* <Route path="/contact" element={<ContactPage />} /> */}
           {/* <Route path="*" element={<div>404 - Page Not Found</div>} /> */}
+          <Route path="*" element={<NotFoundPage />} /> {/* ADDED: Catch-all route for 404 */}
         </Routes>
         {/* --- End Page Routes --- */}
       </main>
