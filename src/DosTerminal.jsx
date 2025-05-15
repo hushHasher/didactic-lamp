@@ -580,6 +580,14 @@ function DosTerminal(props) {
   // Only navigate needs to be here if commands use it.
   }, [navigate]); // End of main useEffect
 
+  // --- Handler to focus terminal on click/tap ---
+  const handleTerminalContentClick = () => {
+    if (termInstanceRef.current) {
+      termInstanceRef.current.focus();
+      console.log("Terminal focused on click.");
+    }
+  };
+
   // --- Determine window style based on state ---
   let windowStyle = {};
   let contentStyle = { height: 'calc(100% - 25px)', width: '100%' }; // Default content style
@@ -661,8 +669,13 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      {/* Apply dynamic contentStyle */}
-      <div ref={divRef} className="dos-terminal-content" style={contentStyle} />
+      {/* Apply dynamic contentStyle AND ADD onClick HANDLER */}
+      <div 
+        ref={divRef} 
+        className="dos-terminal-content" 
+        style={contentStyle} 
+        onClick={handleTerminalContentClick} // ADDED: Focus on click/tap
+      />
     </div>
   );
 }
