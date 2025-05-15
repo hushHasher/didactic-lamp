@@ -311,6 +311,7 @@ function DosTerminal(props) {
     let currentCommand = ''; // This will be managed by the auto-command runner initially
     let currentPath = 'C:\\';
     let processingAutoCommand = false; // Flag to disable user input during auto commands
+    let autoCommandTimerId = null; // Added: To store the setTimeout ID for auto commands
 
     // Helper function to process a single command programmatically (subset of onKey Enter logic)
     const processCommandInternally = (commandString, termInstance, path) => {
@@ -410,8 +411,15 @@ function DosTerminal(props) {
         term.open(divRef.current);
         term.loadAddon(newFitAddon); // Load the NEW addon
 
-        setTimeout(async () => { // Made outer setTimeout async to use await for delays
+        // Assign the timer ID to autoCommandTimerId
+        autoCommandTimerId = setTimeout(async () => { // Made outer setTimeout async to use await for delays
           try {
+            // Before doing anything, check if the terminal instance this timeout was for still exists
+            // This is a safeguard, primary fix is clearing the timeout on unmount.
+            if (!termInstanceRef.current || termInstanceRef.current !== term) {
+                console.warn("[DosTerminal-AutoCmdTimeout] Stale timeout for a disposed/recreated terminal. Skipping execution.");
+                return;
+            }
             newFitAddon.fit(); // Call fit() on the NEW addon
             term.writeln("WEYLAND CORP (c) More human than human");
             term.writeln("MS-DOS Version 6.22");
@@ -587,6 +595,10 @@ function DosTerminal(props) {
 
     return () => {
       console.log("[DosTerminal-MainEffect-Cleanup] Running cleanup.");
+      if (autoCommandTimerId) { // Added: Clear the timeout if it was set
+        clearTimeout(autoCommandTimerId);
+        console.log("[DosTerminal-MainEffect-Cleanup] Cleared auto-command setTimeout.");
+      }
       keyListenerRef.current?.dispose(); keyListenerRef.current = null;
       dataListenerRef.current?.dispose(); dataListenerRef.current = null;
       if (termInstanceRef.current) {
