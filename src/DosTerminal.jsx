@@ -564,6 +564,9 @@ function DosTerminal(props) {
               term.write(data);
             });
 
+            term.focus(); // ADDED: Ensure focus AFTER listeners are set and auto-commands are done
+            console.log("[DosTerminal-AutoCmdEnd] Listeners re-set, terminal explicitly focused."); // ADDED: Log
+
             const updatePrompt = () => { // Ensure updatePrompt uses the correct 'currentPath'
               const promptText = `\r\n${currentPath.toUpperCase()}> `;
               // console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n','\\r\\n')}"`);
