@@ -338,7 +338,9 @@ function DosTerminal(props) {
             term.writeln("Type 'help' for a list of available commands.");
 
             const updatePrompt = () => {
-              term.write(`\r\n${currentPath.toUpperCase()}> `);
+              const promptText = `\r\n${currentPath.toUpperCase()}> `;
+              console.log(`[MobileTest] updatePrompt called. Attempting to write prompt: "${promptText.replace('\r\n', '\\r\\n')}"`);
+              term.write(promptText);
             };
             term.write(`${currentPath.toUpperCase()}> `); // Initial prompt
 
@@ -346,13 +348,18 @@ function DosTerminal(props) {
             keyListenerRef.current?.dispose(); // Dispose previous listener just in case
             keyListenerRef.current = term.onKey(e => {
               const { key, domEvent } = e;
+              console.log(`[MobileTest] Input - domEvent.key: ${domEvent.key}, key: ${key}, Shift: ${domEvent.shiftKey}, Alt: ${domEvent.altKey}, Ctrl: ${domEvent.ctrlKey}, Meta: ${domEvent.metaKey}`);
+
               const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+              console.log(`[MobileTest] Input - printable: ${printable}`);
 
               if (domEvent.key === 'Enter') {
-                term.writeln('');
+                console.log('[MobileTest] Enter pressed. Current command before processing:', currentCommand);
+                term.writeln(''); // This moves to the next line
                 const [command, ...args] = currentCommand.trim().split(/\s+/);
                 const processedCommand = command.toLowerCase();
 
+                console.log(`[MobileTest] Processing command: '${processedCommand}', Args:`, args);
                 // --- Command Handling ---
                 if (processedCommand === 'help') {
                   term.writeln('Available commands:');
@@ -524,18 +531,24 @@ function DosTerminal(props) {
                    term.writeln(`Bad command or file name: ${processedCommand}`);
                  }
                  currentCommand = ''; // Reset local command variable
+                 console.log('[MobileTest] Command processed. About to call updatePrompt.');
                  updatePrompt();
               } else if (domEvent.key === 'Backspace') {
                  if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
                    domEvent.preventDefault();
                    term.write('\b \b');
-                   currentCommand = currentCommand.slice(0, -1); // Update local command variable
+                   currentCommand = currentCommand.slice(0, -1);
+                   console.log(`[MobileTest] Backspace. currentCommand: '${currentCommand}'`);
                  } else {
-                   domEvent.preventDefault();
+                   domEvent.preventDefault(); // Prevent navigating back if command is empty
+                   console.log('[MobileTest] Backspace at start of prompt, prevented default.');
                  }
               } else if (printable && key.length === 1) {
-                 currentCommand += key; // Update local command variable
-                 term.write(key);
+                 currentCommand += key;
+                 term.write(key); // Attempt to write the character
+                 console.log(`[MobileTest] Printable key: '${key}'. term.write called. currentCommand: '${currentCommand}'`);
+              } else {
+                console.log(`[MobileTest] Non-printable or non-char key event. domEvent.key: '${domEvent.key}', key: '${key}'`);
               }
             }); // end term.onKey
 
