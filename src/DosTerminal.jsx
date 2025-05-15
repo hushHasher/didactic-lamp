@@ -519,11 +519,17 @@ function DosTerminal(props) {
             });
 
             dataListenerRef.current = term.onData(data => {
+                // Filter out common escape sequences (like arrow keys, function keys, etc.)
+                if (data.startsWith('\x1b')) { //  is the ESC character
+                    console.log(`[DosTerminal-onData] Ignored escape sequence data: ${JSON.stringify(data)}`);
+                    return; 
+                }
+
                 if (data === '\r' || data === '\n' || data === '\r\n') {
                     // console.log(`[MobileTest-onData] Received newline-like data: '${data.replace("\r", "\\r").replace("\n", "\\n")}'. onKey should handle Enter.`);
                     return;
                 }
-                if (data.charCodeAt(0) === 127 || data === '\b') {
+                if (data.charCodeAt(0) === 127 || data === '\b') { // DEL char (ASCII 127) or Backspace (ASCII 8)
                     // console.log("[MobileTest-onData] Received Backspace-like data. onKey should handle.");
                     return;
                 }
