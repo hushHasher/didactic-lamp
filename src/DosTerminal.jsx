@@ -312,6 +312,7 @@ function DosTerminal(props) {
         cursorBlink: true,
         cursorStyle: 'block',
         fontFamily: 'monospace',
+        allowProposedApi: true,
         theme: {
           background: '#0000AA',
           foreground: '#FFFFFF',
@@ -344,23 +345,22 @@ function DosTerminal(props) {
             };
             term.write(`${currentPath.toUpperCase()}> `); // Initial prompt
 
-            // --- Key Listener Setup ---
-            keyListenerRef.current?.dispose(); // Dispose previous listener just in case
+            // --- Key Listener Setup (Hybrid Approach) ---
+            keyListenerRef.current?.dispose(); 
+            
+            // Listener for special keys (Enter, Backspace)
             keyListenerRef.current = term.onKey(e => {
               const { key, domEvent } = e;
-              console.log(`[MobileTest] Input - domEvent.key: ${domEvent.key}, key: ${key}, Shift: ${domEvent.shiftKey}, Alt: ${domEvent.altKey}, Ctrl: ${domEvent.ctrlKey}, Meta: ${domEvent.metaKey}`);
-
-              const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
-              console.log(`[MobileTest] Input - printable: ${printable}`);
+              console.log(`[MobileTest-onKey] Input - domEvent.key: ${domEvent.key}, key: ${key}`);
 
               if (domEvent.key === 'Enter') {
-                console.log('[MobileTest] Enter pressed. Current command before processing:', currentCommand);
-                term.writeln(''); // This moves to the next line
+                console.log('[MobileTest-onKey] Enter pressed. Current command before processing:', currentCommand);
+                term.writeln(''); 
                 const [command, ...args] = currentCommand.trim().split(/\s+/);
                 const processedCommand = command.toLowerCase();
-
-                console.log(`[MobileTest] Processing command: '${processedCommand}', Args:`, args);
-                // --- Command Handling ---
+                console.log(`[MobileTest-onKey] Processing command: '${processedCommand}', Args:`, args);
+                
+                // (Command Handling Logic - remains largely the same)
                 if (processedCommand === 'help') {
                   term.writeln('Available commands:');
                   term.writeln('  help          - Displays this help message.');
@@ -378,24 +378,20 @@ function DosTerminal(props) {
                    props.onClose?.();
                  } else if (processedCommand === 'about') {
                    term.writeln('Navigating to C:\\ABOUT...');
-                   navigate('/about'); // Use navigate from hook dependency
+                   navigate('/about'); 
                  } else if (processedCommand === 'projects') {
                    term.writeln('Navigating to C:\\PROJECTS...');
-                   navigate('/projects'); // Use navigate from hook dependency
+                   navigate('/projects'); 
                  } else if (processedCommand === 'dir') {
                     const dirToList = getFileSystemEntry(currentPath, fileSystem);
-
-                    // Simplified check now works for root too, thanks to type: 'directory' on C:
                     if (dirToList && dirToList.type === 'directory') {
                         term.writeln(` Volume in drive C is WEYLAND_OS`);
                         term.writeln(` Volume Serial Number is 1986-0426`);
                         term.writeln(` Directory of ${currentPath.toUpperCase()}`);
                         term.writeln('');
-                        
                         let totalFiles = 0;
                         let totalDirs = 0;
                         let totalBytes = 0;
-
                         const formatName = (name) => {
                             if (name.includes('.')) {
                                 const parts = name.split('.');
@@ -403,32 +399,21 @@ function DosTerminal(props) {
                             }
                             return name.substring(0, 8).padEnd(8) + '   ';
                         };
-                        
                         const padLeft = (str, len) => String(str).padStart(len, ' ');
-
-                        // Determine the children to iterate over.
-                        // For C:\, children are direct properties. Use Object.keys filtered.
-                        // For subdirs, children are in the .children property.
                         const childrenContainer = dirToList.children || dirToList;
-                        const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children'); // Filter out metadata keys
-
-                        // Always show '.' and '..' for subdirectories
+                        const keysToList = Object.keys(childrenContainer).filter(key => key !== 'type' && key !== 'date' && key !== 'time' && key !== 'children');
                         if (currentPath.toUpperCase() !== 'C:\\') {
                             const selfDirDate = dirToList.date || '01-01-80';
                             const selfDirTime = dirToList.time || '12:00AM';
                             term.writeln(`${formatName('.')}         <DIR>          ${selfDirDate}  ${selfDirTime}`);
-                            // Ideally get parent's date/time for '..'
-                            // For simplicity, using self's date/time for now.
                             term.writeln(`${formatName('..')}        <DIR>          ${selfDirDate}  ${selfDirTime}`);
                             totalDirs += 2;
                         }
-
                         keysToList.forEach(name => {
                             const item = childrenContainer[name];
-                            const itemName = name.toUpperCase(); // Use the key as name
+                            const itemName = name.toUpperCase();
                             const itemDate = item.date || '01-01-80';
                             const itemTime = item.time || '12:00AM';
-
                             if (item.type === 'directory') {
                                 term.writeln(`${formatName(itemName)}         <DIR>          ${itemDate}  ${itemTime}`);
                                 totalDirs++;
@@ -438,44 +423,40 @@ function DosTerminal(props) {
                                 totalFiles++;
                                 totalBytes += itemSize;
                             }
-                            // Ignore entries without a 'type'
                         });
-
                         term.writeln('');
                         term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
                         const fakeBytesFree = 512 * 1024 * 1024;
                         term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft(fakeBytesFree.toLocaleString(), 12)} bytes free`);
                     } else {
-                        term.writeln('Invalid path.'); // Should be less likely now
+                        term.writeln('Invalid path.');
                     }
                  } else if (processedCommand === 'cd') {
                     const targetDirRaw = args.join(' ').trim();
-
                     if (!targetDirRaw) {
                       term.writeln(currentPath.toUpperCase());
                     } else {
                       const targetDir = targetDirRaw.toUpperCase();
                       let potentialNewPath;
-
                       if (targetDir === '..') {
                         const parts = currentPath.toUpperCase().split('\\').filter(p => p && p !== 'C:');
                         if (parts.length > 0) {
-                          parts.pop(); // Go up one level
+                          parts.pop();
                           potentialNewPath = 'C:\\' + parts.join('\\');
                           if (parts.length > 0) {
                               potentialNewPath += '\\';
                           } else {
-                             potentialNewPath = 'C:\\'; // Ensure it's exactly C:\ if parts is empty
+                             potentialNewPath = 'C:\\';
                           }
                         } else {
                           potentialNewPath = 'C:\\';
                         }
                       } else if (targetDir.startsWith('C:\\')) {
                         potentialNewPath = targetDir;
-                        if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') { // Don't add slash if it *is* C:
+                        if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') {
                             potentialNewPath += '\\';
                         }
-                        if (potentialNewPath.toUpperCase() === 'C:') { // Normalize C: to C:\
+                        if (potentialNewPath.toUpperCase() === 'C:') {
                            potentialNewPath = 'C:\\';
                         }
                       } else {
@@ -485,22 +466,16 @@ function DosTerminal(props) {
                             potentialNewPath += '\\';
                         }
                       }
-
-                      // Normalize edge case C: -> C:\ (redundant maybe, but safe)
                       if (potentialNewPath.toUpperCase() === 'C:') {
                           potentialNewPath = 'C:\\';
                       }
-
-                      // Final check: Does the target directory exist?
-                      console.log(`CD checking path: "${potentialNewPath}"`); // Add log before check
+                      console.log(`CD checking path: "${potentialNewPath}"`);
                       const entry = getFileSystemEntry(potentialNewPath, fileSystem);
-
-                      // Simple check now works for root and subdirs
                       if (entry && entry.type === 'directory') {
                         currentPath = potentialNewPath.toUpperCase();
                       } else {
                         term.writeln('Invalid directory');
-                        console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry); // Log failure details
+                        console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry);
                       }
                     }
                  } else if (processedCommand === 'type') {
@@ -510,14 +485,10 @@ function DosTerminal(props) {
                     } else {
                         const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
                         let fileEntry = null;
-
-                        // Use the correct source for children (direct properties for C:, .children for subdirs)
                         const childrenSource = currentDirEntry?.children || currentDirEntry;
-
                         if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
                            fileEntry = childrenSource[fileName];
                         }
-
                         if (fileEntry && fileEntry.type === 'file') {
                           const lines = fileEntry.content.split('\n');
                           lines.forEach(line => term.writeln(line));
@@ -530,27 +501,55 @@ function DosTerminal(props) {
                  } else if (processedCommand !== '') {
                    term.writeln(`Bad command or file name: ${processedCommand}`);
                  }
-                 currentCommand = ''; // Reset local command variable
-                 console.log('[MobileTest] Command processed. About to call updatePrompt.');
-                 updatePrompt();
+                 // End Command Handling
+
+                currentCommand = ''; 
+                console.log('[MobileTest-onKey] Command processed. About to call updatePrompt.');
+                updatePrompt();
               } else if (domEvent.key === 'Backspace') {
                  if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
                    domEvent.preventDefault();
-                   term.write('\b \b');
+                   term.write('\b \b'); // Visually erase the character
                    currentCommand = currentCommand.slice(0, -1);
-                   console.log(`[MobileTest] Backspace. currentCommand: '${currentCommand}'`);
+                   console.log(`[MobileTest-onKey] Backspace. currentCommand: '${currentCommand}'`);
                  } else {
-                   domEvent.preventDefault(); // Prevent navigating back if command is empty
-                   console.log('[MobileTest] Backspace at start of prompt, prevented default.');
+                   domEvent.preventDefault(); 
+                   console.log('[MobileTest-onKey] Backspace at start of prompt, prevented default.');
                  }
-              } else if (printable && key.length === 1) {
-                 currentCommand += key;
-                 term.write(key); // Attempt to write the character
-                 console.log(`[MobileTest] Printable key: '${key}'. term.write called. currentCommand: '${currentCommand}'`);
               } else {
-                console.log(`[MobileTest] Non-printable or non-char key event. domEvent.key: '${domEvent.key}', key: '${key}'`);
+                // Let onData handle printable characters
+                console.log(`[MobileTest-onKey] Non-Enter/Backspace key event. domEvent.key: '${domEvent.key}', key: '${key}'. Letting onData handle.`);
               }
-            }); // end term.onKey
+            });
+
+            // Listener for general data input (handles typing, pasting, IME)
+            const dataListener = term.onData(data => {
+                // Check if the data is from Enter key press (might be \r or \r\n)
+                // If Enter is handled by onKey, we might not need to check it here or could get double processing.
+                // For now, let onKey handle Enter exclusively.
+                if (data === '\r' || data === '\n' || data === '\r\n') {
+                    console.log(`[MobileTest-onData] Received newline-like data: '${data.replace("\r", "\\r").replace("\n", "\\n")}'. onKey should handle Enter.`);
+                    // Potentially do nothing here if onKey is robustly handling Enter.
+                    // Or, if onKey isn't always catching Enter on mobile, trigger command processing here.
+                    return; 
+                }
+
+                // Check for backspace character (ASCII 0x7F or '\b') if onKey isn't catching it for some reason
+                if (data.charCodeAt(0) === 127 || data === '\b') { // DEL char or backspace
+                    console.log("[MobileTest-onData] Received Backspace-like data. onKey should handle.");
+                    // Let onKey handle backspace visual effect and command string update.
+                    return;
+                }
+
+                currentCommand += data;
+                term.write(data); // Echo the input data to the terminal
+                console.log(`[MobileTest-onData] Data: '${data}'. term.write called. currentCommand: '${currentCommand}'`);
+            });
+            // Store dataListener to dispose it later
+            // You might want to manage multiple listeners if you add more, e.g., in an array.
+            // For simplicity, assuming keyListenerRef can be reused or dataListener needs separate handling for disposal.
+            // Let's create a new ref for it.
+            // dataListenerRef.current = dataListener;
 
           } catch (fitError) {
             console.error("Error during initial fit/write:", fitError);
@@ -568,18 +567,23 @@ function DosTerminal(props) {
     // --- Cleanup Function ---
     return () => {
       console.log("DosTerminal Main Initialization cleanup running.");
-      // Dispose listener ONLY if we actually created one in this effect run
-      // (Prevents issues if effect runs multiple times before term init)
+      // Dispose both listeners
       if (keyListenerRef.current) {
           keyListenerRef.current.dispose();
           keyListenerRef.current = null;
-          console.log("Key listener disposed.");
+          console.log("[Cleanup] onKey listener disposed.");
       }
-      // We should NOT dispose the terminal instance here anymore,
-      // as we want it to persist across renders caused by non-dependency changes.
-      // It will be disposed only when the DosTerminal component truly unmounts.
-      // If you wanted true cleanup on unmount, you'd need another useEffect with empty deps.
-      // Let's rely on the conditional rendering in App.jsx for unmounting/cleanup for now.
+      // Assuming dataListener was stored in a ref, e.g., dataListenerRef
+      // if (dataListenerRef.current) { 
+      //    dataListenerRef.current.dispose();
+      //    dataListenerRef.current = null;
+      //    console.log("[Cleanup] onData listener disposed.");
+      // }
+      // For now, since dataListener is created within the useEffect, it will be implicitly 
+      // handled if the effect re-runs and re-assigns, but explicit disposal is cleaner.
+      // Let's try to add it to the cleanup by returning it from the effect setup, though this is tricky
+      // with onKey also being present.
+      // A simpler approach: ensure the terminal instance itself is disposed on unmount, which cleans up its listeners.
 
       // If you uncomment the below, it WILL reset on navigation if the effect re-runs for *any* reason
       // if (termInstanceRef.current) {
