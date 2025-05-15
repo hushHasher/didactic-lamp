@@ -9,38 +9,52 @@
   color: #FFB000; /* Amber text - matching the glow idea */
   font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
   display: flex;
-  align-items: flex-start; /* Align text to the top */
-  justify-content: flex-start; /* Align text to the left */
-  padding: 15px;
+  flex-direction: column; /* Stack content vertically */
+  justify-content: flex-end; /* Anchor content to the bottom, making it scroll upwards */
+  padding: 10px; /* Adjusted padding */
   box-sizing: border-box;
   z-index: 9999; /* Ensure it's on top of everything */
-  overflow: hidden; /* Hide scrollbars if content overflows briefly */
+  overflow: hidden; /* Clip content that scrolls off the top */
   cursor: none; /* Hide the mouse cursor during boot */
+  font-size: 14px; /* Base font size for desktop */
 }
 
 .boot-text {
-  white-space: pre; /* Preserve whitespace strictly for alignment, newlines handled by divs */
-  font-size: 16px; /* Or your preferred DOS text size */
-  line-height: 1.3;
-  margin: 0;
+  white-space: pre; /* Preserve whitespace strictly for alignment */
+  width: 100%; /* Ensure it uses available width */
+  line-height: 1.3; /* Adjust for better readability */
+  /* Individual lines are divs, cursor is a span */
 }
 
 .boot-text > div {
-  min-height: 1.3em; /* Ensure empty lines take up space */
+  /* min-height removed, rely on line-height and actual content */
 }
 
 .boot-text .cursor {
-  background-color: #FFB000; /* Amber block cursor */
-  color: #000000; /* Text color inside cursor, effectively making it a block */
-  animation: blink 1s step-start infinite;
-  display: inline-block; /* To allow background color */
-  width: 0.6em; /* Width of the cursor */
-  margin-left: 2px; /* Slight separation */
+  display: inline-block; /* Ensure it takes space like a character */
+  background-color: #FFB000; /* Amber cursor */
+  color: #000000; /* Black text on cursor for visibility */
+  animation: blink 1s step-end infinite;
+  /* width: 0.6em; */ /* Adjust if needed based on font */
+  margin-left: 2px; /* Small separation */
 }
 
 @keyframes blink {
-  50% {
-    background-color: transparent;
-    color: transparent;
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .boot-sequence-container {
+    font-size: 12px; /* Smaller font for tablets / large phones */
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .boot-sequence-container {
+    font-size: 10px; /* Even smaller font for small phones */
+    padding: 5px;
   }
 } 
