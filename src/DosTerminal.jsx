@@ -136,6 +136,7 @@ function DosTerminal(props) {
   const termInstanceRef = useRef(null);
   const fitAddonInstanceRef = useRef(null);
   const keyListenerRef = useRef(null);
+  const dataListenerRef = useRef(null);
   const navigate = useNavigate();
   const terminalWindowRef = useRef(null);
 
@@ -241,6 +242,14 @@ function DosTerminal(props) {
     setNormalPositionBeforeMaximize({ x: 0, y: 0 });
     setSizeBeforeMinimize({width: 0, height: 0});
     setPositionBeforeMinimize({x: 0, y: 0});
+
+    if (termInstanceRef.current) {
+      console.log("[DosTerminal-CloseButton] Disposing terminal instance.");
+      termInstanceRef.current.dispose();
+      termInstanceRef.current = null;
+      if (keyListenerRef.current) { keyListenerRef.current.dispose(); keyListenerRef.current = null; }
+      if (dataListenerRef.current) { dataListenerRef.current.dispose(); dataListenerRef.current = null; }
+    }
   };
 
   const handleMinimizeButtonClick = (e) => {
@@ -250,11 +259,8 @@ function DosTerminal(props) {
     if (windowState === 'minimized') {
       setWindowState('normal');
       setPosition(positionBeforeMinimize);
-      // No need to setInitialSize here, let CSS/container handle normal size
-      // Use a slightly longer delay for fit on restore
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
     } else {
-      // Store current position and size before minimizing IF IT'S NORMAL OR MAXIMIZED
       if (windowState === 'normal') {
         setPositionBeforeMinimize({ x: currentRect.left, y: currentRect.top });
         setSizeBeforeMinimize({ width: currentRect.width, height: currentRect.height });
@@ -262,8 +268,6 @@ function DosTerminal(props) {
         setPositionBeforeMinimize(normalPositionBeforeMaximize);
         setSizeBeforeMinimize(normalSizeBeforeMaximize);
       }
-      // If it's already minimized and clicked again, it will go to 'normal' (handled above)
-      
       setWindowState('minimized');
     }
   };
@@ -274,12 +278,9 @@ function DosTerminal(props) {
     if (windowState === 'maximized') {
       setWindowState('normal');
       setPosition(normalPositionBeforeMaximize);
-      // No need to setInitialSize here
-      // Use a slightly longer delay for fit on restore
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
     } else {
       const currentRect = terminalWindowRef.current.getBoundingClientRect();
-      // If currently normal or minimized, store its current state as the "before maximize" state
       if (windowState === 'normal') {
         setNormalPositionBeforeMaximize({ x: currentRect.left, y: currentRect.top });
         setNormalSizeBeforeMaximize({ width: currentRect.width, height: currentRect.height });
@@ -287,22 +288,20 @@ function DosTerminal(props) {
         setNormalPositionBeforeMaximize(positionBeforeMinimize);
         setNormalSizeBeforeMaximize(sizeBeforeMinimize);
       }
-      
       setWindowState('maximized');
-      // Use a slightly longer delay for fit on maximize
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100); // Increased delay
+      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
     }
   };
 
   useEffect(() => {
-    console.log("DosTerminal Main Initialization useEffect running.");
+    console.log("[DosTerminal-MainEffect] Initializing or re-running.");
 
     let term;
-    let currentCommand = ''; // Keep command state local to the effect scope
-    let currentPath = 'C:\\'; // Keep path state local to the effect scope
+    let currentCommand = '';
+    let currentPath = 'C:\\';
 
     if (divRef.current && !termInstanceRef.current) {
-      console.log("DosTerminal: Initializing NEW Terminal instance.");
+      console.log("[DosTerminal-MainEffect] Initializing NEW Terminal instance.");
 
       if (!fitAddonInstanceRef.current) {
           fitAddonInstanceRef.current = new FitAddon();
@@ -321,19 +320,16 @@ function DosTerminal(props) {
           cursorAccent: '#0000AA'
         }
       });
-      termInstanceRef.current = term; // Store the instance
+      termInstanceRef.current = term;
 
       try {
         term.open(divRef.current);
         term.loadAddon(fitAddon);
 
-        // Use a slight delay for initial fit after DOM attachment
         setTimeout(() => {
           try {
             fitAddon.fit();
-            console.log(`DosTerminal: Initial Fit complete. Size: ${term.cols}x${term.rows}`);
-
-            // --- Initial Terminal Output ---
+            console.log(`[DosTerminal-MainEffect] Initial Fit complete. Size: ${term.cols}x${term.rows}`);
             term.writeln("WEYLAND CORP (c) More human than human");
             term.writeln("MS-DOS Version 6.22");
             term.writeln("");
@@ -341,27 +337,25 @@ function DosTerminal(props) {
 
             const updatePrompt = () => {
               const promptText = `\r\n${currentPath.toUpperCase()}> `;
-              console.log(`[MobileTest] updatePrompt called. Attempting to write prompt: "${promptText.replace('\r\n', '\\r\\n')}"`);
+              console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n', '\\r\\n')}"`);
               term.write(promptText);
             };
-            term.write(`${currentPath.toUpperCase()}> `); // Initial prompt
+            term.write(`${currentPath.toUpperCase()}> `);
 
-            // --- Key Listener Setup (Hybrid Approach) ---
-            keyListenerRef.current?.dispose(); 
-            
-            // Listener for special keys (Enter, Backspace)
+            keyListenerRef.current?.dispose();
+            dataListenerRef.current?.dispose();
+
             keyListenerRef.current = term.onKey(e => {
               const { key, domEvent } = e;
-              console.log(`[MobileTest-onKey] Input - domEvent.key: ${domEvent.key}, key: ${key}`);
+              // console.log(`[MobileTest-onKey] Input - domEvent.key: ${domEvent.key}, key: ${key}`); // Keep if needed
 
               if (domEvent.key === 'Enter') {
-                console.log('[MobileTest-onKey] Enter pressed. Current command before processing:', currentCommand);
-                term.writeln(''); 
+                console.log(`[DosTerminal-onKey-Enter] Current command: '${currentCommand}'`);
+                term.writeln('');
                 const [command, ...args] = currentCommand.trim().split(/\s+/);
                 const processedCommand = command.toLowerCase();
-                console.log(`[MobileTest-onKey] Processing command: '${processedCommand}', Args:`, args);
+                console.log(`[DosTerminal-onKey-Enter] Processing command: '${processedCommand}', Args:`, args);
                 
-                // (Command Handling Logic - remains largely the same)
                 if (processedCommand === 'help') {
                   term.writeln('Available commands:');
                   term.writeln('  help          - Displays this help message.');
@@ -470,13 +464,13 @@ function DosTerminal(props) {
                       if (potentialNewPath.toUpperCase() === 'C:') {
                           potentialNewPath = 'C:\\';
                       }
-                      console.log(`CD checking path: "${potentialNewPath}"`);
+                      console.log(`[DosTerminal-onKey-CD] checking path: "${potentialNewPath}"`);
                       const entry = getFileSystemEntry(potentialNewPath, fileSystem);
                       if (entry && entry.type === 'directory') {
                         currentPath = potentialNewPath.toUpperCase();
                       } else {
                         term.writeln('Invalid directory');
-                        console.log(`CD command failed check for path: "${potentialNewPath}". Entry found:`, entry);
+                        console.log(`[DosTerminal-onKey-CD] command failed check for path: "${potentialNewPath}". Entry found:`, entry);
                       }
                     }
                  } else if (processedCommand === 'type') {
@@ -502,127 +496,88 @@ function DosTerminal(props) {
                  } else if (processedCommand !== '') {
                    term.writeln(`Bad command or file name: ${processedCommand}`);
                  }
-                 // End Command Handling
-
-                currentCommand = ''; 
-                console.log('[MobileTest-onKey] Command processed. About to call updatePrompt.');
+                currentCommand = '';
+                console.log(`[DosTerminal-onKey-Enter] currentCommand reset. About to call updatePrompt.`);
                 updatePrompt();
               } else if (domEvent.key === 'Backspace') {
                  if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) {
                    domEvent.preventDefault();
-                   term.write('\b \b'); // Visually erase the character
+                   term.write('\b \b');
                    currentCommand = currentCommand.slice(0, -1);
-                   console.log(`[MobileTest-onKey] Backspace. currentCommand: '${currentCommand}'`);
+                   // console.log(`[MobileTest-onKey] Backspace. currentCommand: '${currentCommand}'`);
                  } else {
-                   domEvent.preventDefault(); 
-                   console.log('[MobileTest-onKey] Backspace at start of prompt, prevented default.');
+                   domEvent.preventDefault();
+                   // console.log('[MobileTest-onKey] Backspace at start of prompt, prevented default.');
                  }
               } else {
-                // Let onData handle printable characters
-                console.log(`[MobileTest-onKey] Non-Enter/Backspace key event. domEvent.key: '${domEvent.key}', key: '${key}'. Letting onData handle.`);
+                // console.log(`[MobileTest-onKey] Non-Enter/Backspace key event. domEvent.key: '${domEvent.key}', key: '${key}'. Letting onData handle.`);
               }
             });
 
-            // Listener for general data input (handles typing, pasting, IME)
-            const dataListener = term.onData(data => {
-                // Check if the data is from Enter key press (might be \r or \r\n)
-                // If Enter is handled by onKey, we might not need to check it here or could get double processing.
-                // For now, let onKey handle Enter exclusively.
+            dataListenerRef.current = term.onData(data => {
                 if (data === '\r' || data === '\n' || data === '\r\n') {
-                    console.log(`[MobileTest-onData] Received newline-like data: '${data.replace("\r", "\\r").replace("\n", "\\n")}'. onKey should handle Enter.`);
-                    // Potentially do nothing here if onKey is robustly handling Enter.
-                    // Or, if onKey isn't always catching Enter on mobile, trigger command processing here.
-                    return; 
-                }
-
-                // Check for backspace character (ASCII 0x7F or '\b') if onKey isn't catching it for some reason
-                if (data.charCodeAt(0) === 127 || data === '\b') { // DEL char or backspace
-                    console.log("[MobileTest-onData] Received Backspace-like data. onKey should handle.");
-                    // Let onKey handle backspace visual effect and command string update.
+                    // console.log(`[MobileTest-onData] Received newline-like data: '${data.replace("\r", "\\r").replace("\n", "\\n")}'. onKey should handle Enter.`);
                     return;
                 }
-
+                if (data.charCodeAt(0) === 127 || data === '\b') {
+                    // console.log("[MobileTest-onData] Received Backspace-like data. onKey should handle.");
+                    return;
+                }
                 currentCommand += data;
-                term.write(data); // Echo the input data to the terminal
-                console.log(`[MobileTest-onData] Data: '${data}'. term.write called. currentCommand: '${currentCommand}'`);
+                term.write(data);
+                // console.log(`[MobileTest-onData] Data: '${data}'. term.write called. currentCommand: '${currentCommand}'`);
             });
-            // Store dataListener to dispose it later
-            // You might want to manage multiple listeners if you add more, e.g., in an array.
-            // For simplicity, assuming keyListenerRef can be reused or dataListener needs separate handling for disposal.
-            // Let's create a new ref for it.
-            // dataListenerRef.current = dataListener;
 
           } catch (fitError) {
-            console.error("Error during initial fit/write:", fitError);
+            console.error("[DosTerminal-MainEffect] Error during initial fit/write:", fitError);
           }
-        }, 50); // Increased delay slightly
+        }, 50);
 
       } catch (initError) {
-        console.error("Error during direct xterm initialization:", initError);
-        termInstanceRef.current = null; // Clear ref on error
+        console.error("[DosTerminal-MainEffect] Error during direct xterm initialization:", initError);
+        termInstanceRef.current = null;
       }
     } else {
-        console.log("DosTerminal: Skipping initialization (already initialized or divRef missing).");
+        console.log("[DosTerminal-MainEffect] Skipping initialization (already initialized or divRef missing).");
     }
 
-    // --- Cleanup Function ---
     return () => {
-      console.log("DosTerminal Main Initialization cleanup running.");
-      // Dispose both listeners
+      console.log("[DosTerminal-MainEffect-Cleanup] Running cleanup.");
       if (keyListenerRef.current) {
           keyListenerRef.current.dispose();
           keyListenerRef.current = null;
-          console.log("[Cleanup] onKey listener disposed.");
+          console.log("[DosTerminal-MainEffect-Cleanup] onKey listener disposed.");
       }
-      // Assuming dataListener was stored in a ref, e.g., dataListenerRef
-      // if (dataListenerRef.current) { 
-      //    dataListenerRef.current.dispose();
-      //    dataListenerRef.current = null;
-      //    console.log("[Cleanup] onData listener disposed.");
-      // }
-      // For now, since dataListener is created within the useEffect, it will be implicitly 
-      // handled if the effect re-runs and re-assigns, but explicit disposal is cleaner.
-      // Let's try to add it to the cleanup by returning it from the effect setup, though this is tricky
-      // with onKey also being present.
-      // A simpler approach: ensure the terminal instance itself is disposed on unmount, which cleans up its listeners.
-
-      // If you uncomment the below, it WILL reset on navigation if the effect re-runs for *any* reason
-      // if (termInstanceRef.current) {
-      //     console.log("Disposing terminal instance in cleanup.");
-      //     termInstanceRef.current.dispose();
-      //     termInstanceRef.current = null;
-      // }
+      if (dataListenerRef.current) {
+          dataListenerRef.current.dispose();
+          dataListenerRef.current = null;
+          console.log("[DosTerminal-MainEffect-Cleanup] onData listener disposed.");
+      }
     };
-
-  // MODIFICATION: Removed props.onClose from dependency array.
-  // Only navigate needs to be here if commands use it.
-  }, [navigate]); // End of main useEffect
+  }, [navigate]);
 
   // useEffect for focusing when shouldFocusOnOpen becomes true
   useEffect(() => {
     if (shouldFocusOnOpen && termInstanceRef.current) {
-      console.log("[DosTerminal] Auto-focusing terminal due to shouldFocusOnOpen.");
+      console.log("[DosTerminal-FocusEffect] Auto-focusing terminal due to shouldFocusOnOpen.");
       termInstanceRef.current.focus();
-      // Optionally, you could call a prop function here to tell the parent
-      // that focus has been attempted, so it can reset shouldFocusOnOpen.
-      // For now, App.jsx will manage this.
     }
-  }, [shouldFocusOnOpen]); // Only re-run if shouldFocusOnOpen changes
+  }, [shouldFocusOnOpen]);
 
   // --- Handler to focus terminal on click/tap ---
   const handleTerminalContentClick = () => {
     if (termInstanceRef.current) {
       termInstanceRef.current.focus();
-      console.log("Terminal focused on click.");
+      console.log("[DosTerminal-ContentClick] Terminal focused on click.");
     }
   };
 
   // --- Determine window style based on state ---
   let windowStyle = {};
-  let contentStyle = { height: 'calc(100% - 25px)', width: '100%' }; // Default content style
+  let contentStyle = { height: 'calc(100% - 25px)', width: '100%' };
 
   if (!hasBeenDragged && windowState === 'normal') {
-    windowStyle = { /* Relies on parent .terminal-container */ };
+    windowStyle = { };
   } else if (hasBeenDragged && windowState === 'normal') {
     windowStyle = {
       position: 'fixed',
@@ -631,7 +586,6 @@ function DosTerminal(props) {
       width: `${initialSize.width}px`,
       height: `${initialSize.height}px`,
     };
-     // Ensure content height is correct relative to window height
      contentStyle = { height: `calc(${initialSize.height}px - 25px)`, width: '100%' };
   } else if (windowState === 'maximized') {
     windowStyle = {
@@ -642,21 +596,18 @@ function DosTerminal(props) {
       height: '100vh',
       zIndex: 1001,
     };
-     // Explicitly set content height for maximized state
      contentStyle = { height: 'calc(100vh - 25px)', width: '100%' };
   } else if (windowState === 'minimized') {
-    // Style for a small bar, e.g., at the bottom or its last position
     windowStyle = {
       position: 'fixed',
-      // If it was dragged, use its last position. Otherwise, default to bottom right.
       left: hasBeenDragged ? `${positionBeforeMinimize.x}px` : 'auto',
       top: hasBeenDragged ? `${positionBeforeMinimize.y}px` : 'auto',
       right: !hasBeenDragged ? '20px' : 'auto',
       bottom: !hasBeenDragged ? '20px' : 'auto',
-      width: hasBeenDragged ? `${sizeBeforeMinimize.width * 0.3}px` : '200px', // Smaller width
-      height: '25px', // Just the title bar height
+      width: hasBeenDragged ? `${sizeBeforeMinimize.width * 0.3}px` : '200px',
+      height: '25px',
       overflow: 'hidden',
-      zIndex: 1000, // Same as normal draggable
+      zIndex: 1000,
     };
   }
 
@@ -669,7 +620,6 @@ function DosTerminal(props) {
       <div
         className="dos-terminal-title-bar"
         onMouseDown={handleMouseDown}
-        // Double click to restore if minimized, otherwise toggle maximize
         onDoubleClick={windowState === 'minimized' ? handleMinimizeButtonClick : handleMaximizeButtonClick}
       >
         <span>MS-DOS Prompt</span>
@@ -679,13 +629,13 @@ function DosTerminal(props) {
             aria-label={windowState === 'minimized' ? "Restore" : "Minimize"}
             onClick={handleMinimizeButtonClick}
           >
-            {windowState === 'minimized' ? '❐' : '_'} {/* Restore/Minimize icons */}
+            {windowState === 'minimized' ? '❐' : '_'}
           </button>
           <button 
             className="dos-terminal-control-btn" 
             aria-label={windowState === 'maximized' ? "Restore" : "Maximize"}
             onClick={handleMaximizeButtonClick}
-            disabled={windowState === 'minimized'} // Disable maximize when minimized
+            disabled={windowState === 'minimized'}
           >
             {windowState === 'maximized' ? '❐' : '□'}
           </button>
@@ -698,12 +648,11 @@ function DosTerminal(props) {
           </button>
         </div>
       </div>
-      {/* Apply dynamic contentStyle AND ADD onClick HANDLER */}
       <div 
         ref={divRef} 
         className="dos-terminal-content" 
         style={contentStyle} 
-        onClick={handleTerminalContentClick} // ADDED: Focus on click/tap
+        onClick={handleTerminalContentClick}
       />
     </div>
   );
