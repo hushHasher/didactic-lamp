@@ -388,10 +388,9 @@ function DosTerminal(props) {
     if (divRef.current && !termInstanceRef.current) {
       console.log("[DosTerminal-MainEffect] Initializing NEW Terminal instance.");
 
-      if (!fitAddonInstanceRef.current) {
-          fitAddonInstanceRef.current = new FitAddon();
-      }
-      const fitAddon = fitAddonInstanceRef.current;
+      // ALWAYS create a new FitAddon for a new Terminal instance
+      const newFitAddon = new FitAddon();
+      fitAddonInstanceRef.current = newFitAddon; // Update the ref to point to the new addon
 
       term = new Terminal({
         cursorBlink: true,
@@ -409,11 +408,11 @@ function DosTerminal(props) {
 
       try {
         term.open(divRef.current);
-        term.loadAddon(fitAddon);
+        term.loadAddon(newFitAddon); // Load the NEW addon
 
         setTimeout(async () => { // Made outer setTimeout async to use await for delays
           try {
-            fitAddon.fit();
+            newFitAddon.fit(); // Call fit() on the NEW addon
             term.writeln("WEYLAND CORP (c) More human than human");
             term.writeln("MS-DOS Version 6.22");
             term.writeln("");
