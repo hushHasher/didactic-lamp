@@ -5,13 +5,13 @@ import useTypewriter from '../hooks/useTypewriter'; // Import the hook
 function AboutPage() {
   const pageKey = 'visits_about_space_odyssey'; // Updated key for new content
 
-  const accessText = "> WILLOW_OS_2025: ACCESSING ARCHIVE NODE 7 (CIRCA 1990s)...TRANSMISSION SOURCE: UNKNOWN_EPOCH...";
-  const decryptText = "> QUANTUM DECRYPTION LAYER ACTIVE... DECODING MONOLITHIC DATA STREAM...";
-  const para1Text = "It appeared before the dawn of knowing, a silent teacher, a harbinger of change. Its geometry, perfect and alien, whispered of tools, of fire, of the stars themselves, and a destiny yet unwritten.";
-  const para2Text = "Then came the journey, not across mere distance, but through the very fabric of perception. A gateway flung open to vistas of impossible color and form, where time itself bent, fractured, and reformed into new dimensions.";
-  const para3Text = "The transmission, when finally perceived, was not a voice, but a cascade of pure, overwhelming understanding. My God... the void was not empty, but full of stars, and in their light, all previous scales of existence became infinitesimal.";
-  const para4Text = "To return is to be reborn, a star-child gazing upon the cradle with eyes that have witnessed the infinite. The old limits, now merely a starting point for a journey without end, into the heart of the cosmic enigma.";
-  const endText = "> WILLOW_OS_2025: END OF STAR_GATE_MANIFEST.LOG. RETURN TO CURRENT TIMELINE? (Y/N)";
+  const accessText = "> WILLOW_OS_2025: ANOMALOUS SIGNAL CLUSTER DETECTED... SOURCE: MULTIPLE TEMPORAL ECHOES (SECTOR 8X9X)...";
+  const decryptText = "> QUANTUM DECRYPTION OVERLOAD... INTERPRETING FRAGMENTED REALITY STREAMS... WARNING: NARRATIVE COHERENCE UNSTABLE...";
+  const para1Text = "Neon rain streaks across digital skylines, reflecting in eyes that question their own reflection. Circuits hum with borrowed life, programs dream of users, and the line between the created and the creator dissolves into the phosphor glow.";
+  const para2Text = "A relentless hunter's crimson gaze cuts through the static. \"I'll be back,\" it whispers, a promise and a threat. Elsewhere, a desperate cry: \"Game over, man!\" as corporate directives override human survival, and steel flesh enforces a broken law.";
+  const para3Text = "Is this real? The choice echoes: a red pill to shatter illusions, or blue to remain blissfully unaware. \"OBEY,\" the hidden signals command, while memories of a life on Mars, or a life never lived, fight for purchase in a fractured mind.";
+  const para4Text = "These are not just stories, Willow computes, but probability waves from what might have been, or what could yet be. This terminal now acts as a junction, a place to observe these colliding dystopias and perhaps, just perhaps, discern a different directive.";
+  const endText = "> WILLOW_OS_2025: CONVERGENCE EVENT LOGGED. FURTHER ANALYSIS REQUIRED. SYSTEM STABILITY: NOMINAL. RETURN TO BASE REALITY? (Y/N)_";
 
   // Pass pageKey
   const typedAccess = useTypewriter(accessText, 30, `${pageKey}_access`);
