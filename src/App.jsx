@@ -1,5 +1,5 @@
 // src/App.jsx - Padding adjustments
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react'; // Added useRef
 import { Routes, Route, Link } from 'react-router-dom'; // Import Router components
 import DosTerminal from './DosTerminal';
 import HomePage from './pages/HomePage'; // Import page components
@@ -8,6 +8,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import NotFoundPage from './pages/NotFoundPage'; // ADDED: Import NotFoundPage
 import FooterClock from './components/FooterClock'; // Import the new component
 import BootSequence from './components/BootSequence'; // ADDED: Import BootSequence
+import MobileMenu from './components/MobileMenu'; // ADDED: Import MobileMenu
 import './App.css'; // Main layout styles
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
   // State for Mobile Menu Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [focusTerminalNextOpen, setFocusTerminalNextOpen] = useState(false); // ADDED: State for focus trigger
+  const mobileMenuButtonRef = useRef(null); // ADDED: Ref for mobile menu button
 
   // Wrap toggleTerminal with useCallback to give it a stable identity
   const toggleTerminal = useCallback(() => {
@@ -39,6 +41,8 @@ function App() {
   // Function to close mobile menu (used by links)
   const closeMobileMenu = useCallback(() => { // And this
     setIsMobileMenuOpen(false);
+    // Return focus to the mobile menu button when menu is closed
+    mobileMenuButtonRef.current?.focus();
   }, []);
 
   // Function to handle CLI toggle from mobile menu
@@ -61,6 +65,23 @@ function App() {
       setFocusTerminalNextOpen(false);
     }
   }, [showTerminal, focusTerminalNextOpen]);
+
+  // ADDED: useEffect for Escape key to close mobile menu
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        closeMobileMenu();
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isMobileMenuOpen, closeMobileMenu]);
 
   // ADDED: Conditional rendering for boot sequence
   if (booting) {
@@ -88,40 +109,45 @@ function App() {
 
           {/* Hamburger Button (Mobile Only - controlled by CSS) */}
           {/* Use stable toggleMobileMenu */}
-          <button className="tui-button mobile-menu-button" onClick={toggleMobileMenu} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
+          <button
+            ref={mobileMenuButtonRef} // Added ref
+            className="tui-button mobile-menu-button"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+            aria-expanded={isMobileMenuOpen}
+          >
             ☰
           </button>
 
           {/* Right side links (Desktop Only - controlled by CSS) */}
-          <ul className="desktop-nav-links" style={{ listStyle: 'none', margin: 0, padding: 0, gap: '10px' }}>
-            <li><Link to="/" className="tui-button">Home</Link></li>
-            <li><Link to="/about" className="tui-button">About</Link></li>
-            <li><Link to="/projects" className="tui-button">Projects</Link></li>
-            {/* <li><Link to="/contact" className="tui-button">Contact</Link></li> */}
-            <li>
-              {/* Use stable toggleTerminal */}
-              <button className="tui-button" onClick={toggleTerminal} aria-pressed={showTerminal}>
-                {showTerminal ? 'CLI [X]' : 'CLI [_]'}
-              </button>
-            </li>
-          </ul>
+          <nav aria-label="Main navigation"> {/* ADDED: nav wrapper and aria-label */}
+            <ul className="desktop-nav-links" style={{ listStyle: 'none', margin: 0, padding: 0, gap: '10px' }}>
+              <li><Link to="/" className="tui-button">Home</Link></li>
+              <li><Link to="/about" className="tui-button">About</Link></li>
+              <li><Link to="/projects" className="tui-button">Projects</Link></li>
+              {/* <li><Link to="/contact" className="tui-button">Contact</Link></li> */}
+              <li>
+                {/* Use stable toggleTerminal */}
+                <button
+                  className="tui-button"
+                  onClick={toggleTerminal}
+                  aria-pressed={showTerminal}
+                  aria-label="Toggle Command Line Interface" // ADDED: aria-label
+                >
+                  {showTerminal ? 'CLI [X]' : 'CLI [_]'}
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
 
-        {/* Mobile Menu Dropdown */}
-        <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-          <ul style={{ listStyle: 'none', margin: '10px 0 0 0', padding: 0 }}>
-            <li><Link to="/" className="tui-button mobile-link" onClick={closeMobileMenu}>Home</Link></li>
-            <li><Link to="/about" className="tui-button mobile-link" onClick={closeMobileMenu}>About</Link></li>
-            <li><Link to="/projects" className="tui-button mobile-link" onClick={closeMobileMenu}>Projects</Link></li>
-            {/* <li><Link to="/contact" className="tui-button mobile-link" onClick={closeMobileMenu}>Contact</Link></li> */}
-            <li>
-              {/* Use stable toggleTerminalAndMenu */}
-              <button className="tui-button mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
-                {showTerminal ? 'Close CLI' : 'Launch CLI'}
-              </button>
-            </li>
-          </ul>
-        </div>
+        {/* Mobile Menu Dropdown - Replaced with MobileMenu component */}
+        <MobileMenu
+          isOpen={isMobileMenuOpen}
+          closeMenu={closeMobileMenu}
+          toggleTerminalAndMenu={toggleTerminalAndMenu}
+          showTerminal={showTerminal}
+        />
       </nav>
       {/* --- End Navigation Bar --- */}
 
@@ -148,8 +174,17 @@ function App() {
 
       {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
       {showTerminal && (
-        <div className="terminal-container">
-          <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
+        <div
+          className="terminal-container"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="terminal-title"
+        >
+          <DosTerminal
+            onClose={toggleTerminal}
+            shouldFocusOnOpen={focusTerminalNextOpen}
+            titleId="terminal-title"
+          />
         </div>
       )}
 

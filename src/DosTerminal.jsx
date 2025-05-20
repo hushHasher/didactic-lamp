@@ -1,5 +1,6 @@
 // src/DosTerminal.jsx
 import { useEffect, useRef, useState } from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes
 import { useNavigate } from 'react-router-dom';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -142,7 +143,7 @@ const autoCommands = [
 ];
 
 function DosTerminal(props) {
-  const { onClose, shouldFocusOnOpen } = props; // Destructure props
+  const { onClose, shouldFocusOnOpen, titleId } = props; // Destructure props, add titleId
   const divRef = useRef(null);
   const termInstanceRef = useRef(null);
   const fitAddonInstanceRef = useRef(null);
@@ -669,13 +670,15 @@ function DosTerminal(props) {
       ref={terminalWindowRef}
       className={`dos-terminal-window ${windowState === 'minimized' ? 'minimized' : ''}`}
       style={windowStyle}
+      aria-label="MS-DOS Prompt Terminal Window" // Added aria-label
+      tabIndex={-1} // Added tabIndex to make it programmatically focusable
     >
       <div
         className="dos-terminal-title-bar"
         onMouseDown={handleMouseDown}
         onDoubleClick={windowState === 'minimized' ? handleMinimizeButtonClick : handleMaximizeButtonClick}
       >
-        <span>MS-DOS Prompt</span>
+        <span id={titleId}>MS-DOS Prompt</span> {/* Added id={titleId} */}
         <div className="dos-terminal-window-controls">
           <button 
             className="dos-terminal-control-btn" 
@@ -710,5 +713,12 @@ function DosTerminal(props) {
     </div>
   );
 }
+
+// Add PropTypes validation
+DosTerminal.propTypes = {
+  onClose: PropTypes.func,
+  shouldFocusOnOpen: PropTypes.bool,
+  titleId: PropTypes.string.isRequired, // Mark titleId as a required string
+};
 
 export default DosTerminal;
