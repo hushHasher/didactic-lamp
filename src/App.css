@@ -9,6 +9,7 @@
   backdrop-filter: blur(2px);
   position: relative;
   z-index: 10;
+  color: #000000; /* Ensure black text */
 }
 
 /* Enhanced Main Content */
@@ -432,6 +433,34 @@
 
 ::-webkit-scrollbar-corner {
   background: #c0c0c0;
+}
+
+/* TUI CSS Override - Ensure proper contrast */
+.tui-panel, .tui-window .tui-panel {
+  background-color: #c0c0c0 !important;
+  color: #000000 !important;
+}
+
+.tui-window {
+  background-color: #c0c0c0 !important;
+  color: #000000 !important;
+}
+
+.tui-title {
+  background: linear-gradient(90deg, #000080 0%, #0000ff 100%) !important;
+  color: #ffffff !important;
+}
+
+.tui-button {
+  color: #000000 !important;
+  background-color: #c0c0c0 !important;
+}
+
+/* Ensure all text elements have proper contrast */
+p, div, span, h1, h2, h3, h4, h5, h6, li, td, th, 
+.tui-panel p, .tui-panel div, .tui-panel span, 
+.tui-window p, .tui-window div, .tui-window span {
+  color: #000000 !important;
 }
 
 /* Mobile Enhancements */

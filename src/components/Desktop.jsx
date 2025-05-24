@@ -43,21 +43,7 @@ import { useState, useCallback } from 'react';import WindowManager from './Windo
     return `window_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-  const openTerminal = useCallback(() => {
-    const id = generateWindowId();
-    const newWindow = {
-      id,
-      title: 'MS-DOS Prompt',
-      icon: '💻',
-      position: { x: 100 + windows.length * 30, y: 100 + windows.length * 30 },
-      size: { width: 700, height: 450 },
-      minSize: { width: 400, height: 300 },
-      resizable: true,
-      zIndex: 1000 + windows.length,
-      content: <DosTerminal onClose={() => closeWindow(id)} shouldFocusOnOpen={true} />
-    };
-    setWindows(prev => [...prev, newWindow]);
-  }, [windows.length, generateWindowId]);
+    const openTerminal = useCallback(() => {    const id = generateWindowId();    const newWindow = {      id,      title: 'MS-DOS Prompt',      icon: '💻',      position: { x: 100 + windows.length * 30, y: 100 + windows.length * 30 },      size: { width: 700, height: 450 },      minSize: { width: 400, height: 300 },      resizable: true,      zIndex: 1000 + windows.length,      content: <DosTerminal onClose={() => closeWindow(id)} shouldFocusOnOpen={true} />    };    setWindows(prev => [...prev, newWindow]);  }, [windows.length, generateWindowId, closeWindow]);
 
   const openAboutWindow = useCallback(() => {
     const id = generateWindowId();
