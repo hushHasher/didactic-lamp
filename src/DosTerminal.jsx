@@ -313,6 +313,14 @@ function DosTerminal(props) {
     let processingAutoCommand = false; // Flag to disable user input during auto commands
     let autoCommandTimerId = null; // Added: To store the setTimeout ID for auto commands
 
+    // Helper function for updating the terminal prompt
+    const updatePrompt = () => {
+      if (term) {
+        const promptText = `\r\n${currentPath.toUpperCase()}> `;
+        term.write(promptText);
+      }
+    };
+
     // Helper function to process a single command programmatically (subset of onKey Enter logic)
     const processCommandInternally = (commandString, termInstance, path) => {
       // This function will be called by the auto-command runner.
@@ -573,12 +581,6 @@ function DosTerminal(props) {
 
             term.focus(); // ADDED: Ensure focus AFTER listeners are set and auto-commands are done
             console.log("[DosTerminal-AutoCmdEnd] Listeners re-set, terminal explicitly focused."); // ADDED: Log
-
-            const updatePrompt = () => { // Ensure updatePrompt uses the correct 'currentPath'
-              const promptText = `\r\n${currentPath.toUpperCase()}> `;
-              // console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n','\\r\\n')}"`);
-              term.write(promptText);
-            };
 
           } catch (fitError) {
             console.error("[DosTerminal-MainEffect] Error during initial fit/write/auto-commands:", fitError);
