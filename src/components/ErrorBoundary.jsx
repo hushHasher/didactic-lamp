@@ -47,7 +47,7 @@ class ErrorBoundary extends React.Component {
               maxHeight: '200px'
             }}>
               {this.state.error && this.state.error.toString()}
-              {this.state.errorInfo.componentStack}
+              {this.state.errorInfo && this.state.errorInfo.componentStack}
             </pre>
           </details>
           <button 
