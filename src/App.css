@@ -442,16 +442,60 @@
 
 /* Global text improvements */
 p, h1, h2, h3, h4, h5, h6, span, div {
-  color: #2a2a2a; /* Darker default text */
+  color: #1a1a1a; /* Very dark text for better readability */
 }
 
 .tui-panel, .tui-window {
-  color: #2a2a2a !important; /* Ensure window content has dark text */
+  color: #1a1a1a !important; /* Ensure window content has dark text */
 }
 
 .tui-panel p, .tui-window p {
-  color: #2a2a2a !important;
+  color: #1a1a1a !important;
   line-height: 1.6;
+}
+
+/* Ensure strong elements are also dark */
+strong {
+  color: #1a1a1a;
+}
+
+/* Ensure em elements are also dark */
+em {
+  color: #1a1a1a;
+}
+
+/* Ensure all text elements have consistent dark color */
+li, td, th, label, input, button, select, textarea {
+  color: #1a1a1a;
+}
+
+/* Override any default link colors to be dark */
+a {
+  color: #1a1a1a;
+}
+
+/* Ensure list items are dark */
+ul, ol, li {
+  color: #1a1a1a;
+}
+
+/* Ensure table text is dark */
+table, table td, table th {
+  color: #1a1a1a;
+}
+
+/* Exception: Terminal and DOS window content should remain light text on dark background */
+.dos-terminal-content, 
+.dos-terminal-content *,
+.window-content.terminal,
+.window-content.terminal * {
+  color: #ffffff !important;
+}
+
+/* Exception: System status in navbar should remain green */
+.system-status,
+.system-status * {
+  color: #00ff00 !important;
 }
 
 /* Mobile Enhancements */
