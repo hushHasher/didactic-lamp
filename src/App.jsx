@@ -131,8 +131,8 @@ function App() {
     return (
       <>
         <AiDosTerminal onClose={() => setAiDosMode(false)} />
-        {/* Floating toggle buttons */}
-        <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 2000, display: 'flex', gap: '8px' }}>
+        {/* Floating toggle buttons - moved to top-left to avoid overlap */}
+        <div style={{ position: 'fixed', top: '10px', left: '10px', zIndex: 2000, display: 'flex', gap: '8px' }}>
           <button 
             onClick={toggleDesktopMode}
             style={{
