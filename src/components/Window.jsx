@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import './Window.css';
+import { useState, useRef, useEffect, useCallback } from 'react';import PropTypes from 'prop-types';import './Window.css';
 
 function Window({ 
   children, 
@@ -251,4 +250,4 @@ function Window({
   );
 }
 
-export default Window;
+Window.propTypes = {  children: PropTypes.node.isRequired,  title: PropTypes.string.isRequired,  onClose: PropTypes.func,  initialPosition: PropTypes.shape({    x: PropTypes.number,    y: PropTypes.number  }),  initialSize: PropTypes.shape({    width: PropTypes.number,    height: PropTypes.number  }),  minSize: PropTypes.shape({    width: PropTypes.number,    height: PropTypes.number  }),  resizable: PropTypes.bool,  icon: PropTypes.string,  zIndex: PropTypes.number,  onFocus: PropTypes.func};Window.defaultProps = {  initialPosition: { x: 100, y: 100 },  initialSize: { width: 600, height: 400 },  minSize: { width: 300, height: 200 },  resizable: true,  icon: '📁',  zIndex: 1000};export default Window;

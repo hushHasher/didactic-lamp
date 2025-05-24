@@ -1,0 +1,66 @@
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+}
+
+.loading-spinner {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.spinner-block {
+  font-size: 16px;
+  color: #00ff00;
+  animation: spinnerBlink 1.2s ease-in-out infinite;
+}
+
+.spinner-block:nth-child(1) { animation-delay: 0s; }
+.spinner-block:nth-child(2) { animation-delay: 0.3s; }
+.spinner-block:nth-child(3) { animation-delay: 0.6s; }
+.spinner-block:nth-child(4) { animation-delay: 0.9s; }
+
+@keyframes spinnerBlink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.loading-message {
+  color: #00ff00;
+  font-size: 14px;
+  text-align: center;
+  animation: textPulse 2s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Size variants */
+.loading-spinner-container.small .spinner-block {
+  font-size: 12px;
+}
+
+.loading-spinner-container.small .loading-message {
+  font-size: 12px;
+}
+
+.loading-spinner-container.large .spinner-block {
+  font-size: 20px;
+}
+
+.loading-spinner-container.large .loading-message {
+  font-size: 16px;
+}
+
+/* Dark background variant */
+.loading-spinner-container.dark {
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 8px;
+  color: #00ff00;
+} 

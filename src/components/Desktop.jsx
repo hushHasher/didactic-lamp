@@ -1,12 +1,4 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import WindowManager from './WindowManager';
-import DosTerminal from '../DosTerminal';
-import './Desktop.css';
-
-function Desktop() {
-  const [windows, setWindows] = useState([]);
-  const navigate = useNavigate();
+import { useState, useCallback } from 'react';import WindowManager from './WindowManager';import DosTerminal from '../DosTerminal';import './Desktop.css';function Desktop() {  const [windows, setWindows] = useState([]);
 
   // Desktop icons configuration
   const desktopIcons = [
@@ -230,9 +222,7 @@ function Desktop() {
     setWindows(prev => [...prev, newWindow]);
   }, [windows.length, generateWindowId]);
 
-  const closeWindow = useCallback((windowId) => {
-    setWindows(prev => prev.filter(w => w.id !== windowId));
-  }, []);
+    const closeWindow = useCallback((windowId) => {    setWindows(prev => prev.filter(w => w.id !== windowId));  }, []);
 
   const handleIconDoubleClick = useCallback((icon) => {
     icon.action();
