@@ -5,37 +5,13 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  /* Authentic Windows 3.1 "Weave" pattern */
+  /* Authentic Windows 3.1 default gray desktop background */
   background: #c0c0c0;
-  background-image: 
-    repeating-linear-gradient(
-      45deg,
-      #c0c0c0 0px,
-      #c0c0c0 2px,
-      #808080 2px,
-      #808080 4px,
-      #c0c0c0 4px,
-      #c0c0c0 6px,
-      #ffffff 6px,
-      #ffffff 8px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      #c0c0c0 0px,
-      #c0c0c0 2px,
-      #808080 2px,
-      #808080 4px,
-      #c0c0c0 4px,
-      #c0c0c0 6px,
-      #ffffff 6px,
-      #ffffff 8px
-    );
-  background-size: 16px 16px;
   z-index: 0;
   overflow: hidden;
 }
 
-/* Desktop wallpaper pattern effect */
+/* Subtle dithering effect for authentic 16-color look */
 .desktop::before {
   content: "";
   position: absolute;
@@ -43,21 +19,21 @@
   left: 0;
   width: 100%;
   height: 100%;
-  /* Add subtle dithering effect typical of 16-color Windows 3.1 */
+  /* Very subtle dithering pattern typical of 16-color displays */
   background-image: 
     repeating-linear-gradient(
       0deg,
       transparent 0px,
       transparent 1px,
-      rgba(0, 0, 0, 0.03) 1px,
-      rgba(0, 0, 0, 0.03) 2px
+      rgba(0, 0, 0, 0.02) 1px,
+      rgba(0, 0, 0, 0.02) 2px
     ),
     repeating-linear-gradient(
       90deg,
       transparent 0px,
       transparent 1px,
-      rgba(0, 0, 0, 0.03) 1px,
-      rgba(0, 0, 0, 0.03) 2px
+      rgba(0, 0, 0, 0.02) 1px,
+      rgba(0, 0, 0, 0.02) 2px
     );
   pointer-events: none;
 }
