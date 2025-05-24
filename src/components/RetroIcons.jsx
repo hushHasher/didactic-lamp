@@ -11,7 +11,7 @@ import {
   FaImage,
   FaNetworkWired,
   FaTrash,
-  FaHardDrive,
+  FaHdd,
   FaDesktop,
   FaFolderOpen
 } from 'react-icons/fa';
@@ -290,7 +290,7 @@ export const HardDiskIcon = ({ size = 32 }) => (
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-      <FaHardDrive style={{ color: '#c0c0c0', fontSize: '18px' }} />
+      <FaHdd style={{ color: '#c0c0c0', fontSize: '18px' }} />
     </div>
   </IconWrapper>
 );
