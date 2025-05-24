@@ -1,4 +1,10 @@
-import { useState, useCallback } from 'react';import WindowManager from './WindowManager';import DosTerminal from '../DosTerminal';import './Desktop.css';function Desktop() {  const [windows, setWindows] = useState([]);
+import { useState, useCallback } from 'react';
+import WindowManager from './WindowManager';
+import DosTerminal from '../DosTerminal';
+import './Desktop.css';
+
+function Desktop() {
+  const [windows, setWindows] = useState([]);
 
   // Desktop icons configuration
   const desktopIcons = [
@@ -43,7 +49,25 @@ import { useState, useCallback } from 'react';import WindowManager from './Windo
     return `window_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-    const openTerminal = useCallback(() => {    const id = generateWindowId();    const newWindow = {      id,      title: 'MS-DOS Prompt',      icon: '💻',      position: { x: 100 + windows.length * 30, y: 100 + windows.length * 30 },      size: { width: 700, height: 450 },      minSize: { width: 400, height: 300 },      resizable: true,      zIndex: 1000 + windows.length,      content: <DosTerminal onClose={() => closeWindow(id)} shouldFocusOnOpen={true} />    };    setWindows(prev => [...prev, newWindow]);  }, [windows.length, generateWindowId, closeWindow]);
+  const closeWindow = useCallback((windowId) => {
+    setWindows(prev => prev.filter(window => window.id !== windowId));
+  }, []);
+
+  const openTerminal = useCallback(() => {
+    const id = generateWindowId();
+    const newWindow = {
+      id,
+      title: 'MS-DOS Prompt',
+      icon: '💻',
+      position: { x: 100 + windows.length * 30, y: 100 + windows.length * 30 },
+      size: { width: 700, height: 450 },
+      minSize: { width: 400, height: 300 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: <DosTerminal onClose={() => closeWindow(id)} shouldFocusOnOpen={true} />
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId, closeWindow]);
 
   const openAboutWindow = useCallback(() => {
     const id = generateWindowId();
@@ -199,8 +223,8 @@ import { useState, useCallback } from 'react';import WindowManager from './Windo
         <div className="window-content text-editor">
           <textarea 
             className="text-editor-content"
-            placeholder="Welcome to the Weyland Corp Text Editor...&#10;&#10;Type your message here..."
-            defaultValue="WEYLAND CORP SECURE TERMINAL&#10;Classification: RESTRICTED&#10;&#10;> Accessing neural network...&#10;> Loading personality matrix...&#10;> Initializing conversational protocols...&#10;&#10;System ready for user input.&#10;&#10;Remember: Building Better Worlds starts with better communication."
+            defaultValue="Welcome to Notepad for Weyland Corp OS 2025..."
+            spellCheck={false}
           />
         </div>
       )
@@ -208,13 +232,32 @@ import { useState, useCallback } from 'react';import WindowManager from './Windo
     setWindows(prev => [...prev, newWindow]);
   }, [windows.length, generateWindowId]);
 
-    const closeWindow = useCallback((windowId) => {    setWindows(prev => prev.filter(w => w.id !== windowId));  }, []);
-
   const handleIconDoubleClick = useCallback((icon) => {
     icon.action();
   }, []);
 
-  return (    <div className="desktop">      <WindowManager         windows={windows}         onWindowsChange={setWindows}      >        {/* Desktop Icons */}        <div className="desktop-icons">          {desktopIcons.map(icon => (            <div              key={icon.id}              className="desktop-icon"              style={{                left: icon.position.x,                top: icon.position.y,              }}              onDoubleClick={() => handleIconDoubleClick(icon)}            >              <div className="icon-image">{icon.icon}</div>              <div className="icon-label">{icon.name}</div>            </div>          ))}        </div>      </WindowManager>    </div>  );
+  return (
+    <div className="desktop">
+      {/* Desktop Icons */}
+      {desktopIcons.map((icon) => (
+        <div
+          key={icon.id}
+          className="desktop-icon"
+          style={{
+            left: `${icon.position.x}px`,
+            top: `${icon.position.y}px`,
+          }}
+          onDoubleClick={() => handleIconDoubleClick(icon)}
+        >
+          <div className="icon-image">{icon.icon}</div>
+          <div className="icon-label">{icon.name}</div>
+        </div>
+      ))}
+
+      {/* Window Manager */}
+      <WindowManager windows={windows} onWindowsChange={setWindows} />
+    </div>
+  );
 }
 
 export default Desktop; 
