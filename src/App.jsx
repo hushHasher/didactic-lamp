@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Link } from 'react-router-dom'; // Import Router components
 import DosTerminal from './DosTerminal';
+import AiDosTerminal from './components/AiDosTerminal'; // Import AI DOS Terminal
 import Desktop from './components/Desktop'; // Import Desktop component
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
@@ -17,6 +18,9 @@ function App() {
   
   // ADDED: State for desktop mode vs web mode
   const [desktopMode, setDesktopMode] = useState(true);
+
+  // ADDED: State for AI DOS mode
+  const [aiDosMode, setAiDosMode] = useState(false);
 
   // State for Terminal Visibility
   const [showTerminal, setShowTerminal] = useState(false);
@@ -38,6 +42,18 @@ function App() {
   // Handler to toggle between desktop and web mode
   const toggleDesktopMode = useCallback(() => {
     setDesktopMode(prevState => !prevState);
+    setAiDosMode(false); // Exit AI DOS when switching to desktop/web mode
+  }, []);
+
+  // Handler to toggle AI DOS mode
+  const toggleAiDosMode = useCallback(() => {
+    setAiDosMode(prevState => {
+      const newAiDosMode = !prevState;
+      if (newAiDosMode) {
+        setDesktopMode(false); // Exit desktop mode when entering AI DOS
+      }
+      return newAiDosMode;
+    });
   }, []);
 
   // Handler to toggle mobile menu
@@ -110,6 +126,44 @@ function App() {
     );
   }
 
+  // ADDED: If in AI DOS mode, show AI DOS interface
+  if (aiDosMode) {
+    return (
+      <>
+        <AiDosTerminal onClose={() => setAiDosMode(false)} />
+        {/* Floating toggle buttons */}
+        <div style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 2000, display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={toggleDesktopMode}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#c0c0c0',
+              border: '2px outset #c0c0c0',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontFamily: 'sans-serif'
+            }}
+          >
+            🖥️ Desktop
+          </button>
+          <button 
+            onClick={() => setAiDosMode(false)}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#c0c0c0',
+              border: '2px outset #c0c0c0',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontFamily: 'sans-serif'
+            }}
+          >
+            🌐 Web Mode
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="App"> {/* Main layout container */}
@@ -153,6 +207,11 @@ function App() {
                 </button>
               </li>
               <li>
+                <button className="tui-button enhanced-nav-btn" onClick={toggleAiDosMode}>
+                  🤖 AI DOS
+                </button>
+              </li>
+              <li>
                 {/* Use stable toggleTerminal */}
                 <button className="tui-button enhanced-nav-btn terminal-btn" onClick={toggleTerminal} aria-pressed={showTerminal}>
                   {showTerminal ? '💻 CLI [ON]' : '💻 CLI [OFF]'}
@@ -170,6 +229,11 @@ function App() {
               <li>
                 <button className="tui-button mobile-link enhanced-mobile-link" onClick={() => { toggleDesktopMode(); closeMobileMenu(); }}>
                   🖥️ Desktop
+                </button>
+              </li>
+              <li>
+                <button className="tui-button mobile-link enhanced-mobile-link" onClick={() => { toggleAiDosMode(); closeMobileMenu(); }}>
+                  🤖 AI DOS
                 </button>
               </li>
               <li>

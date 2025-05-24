@@ -1,0 +1,265 @@
+/* AI DOS Terminal Component CSS */
+.ai-dos-terminal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+  color: #00ff00;
+  font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+  font-size: 14px;
+  line-height: 1.2;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Terminal Header */
+.ai-dos-terminal-header {
+  background: linear-gradient(90deg, #000080, #000040);
+  color: #ffffff;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #00ff00;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.ai-dos-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-dos-close-btn {
+  background: #ff0000;
+  color: #ffffff;
+  border: 2px outset #ff4040;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-dos-close-btn:hover {
+  background: #ff4040;
+  border: 2px inset #ff4040;
+}
+
+.ai-dos-close-btn:active {
+  background: #c00000;
+  border: 2px inset #c00000;
+}
+
+/* Terminal Content */
+.ai-dos-terminal-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #000000;
+  position: relative;
+}
+
+/* Terminal Lines */
+.terminal-line {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.terminal-line.system {
+  color: #00ff00;
+}
+
+.terminal-line.input {
+  color: #ffffff;
+  font-weight: bold;
+  margin: 8px 0 4px 0;
+}
+
+.terminal-line.output {
+  color: #00ff00;
+  margin: 2px 0;
+}
+
+.terminal-line.processing {
+  color: #ffff00;
+  font-style: italic;
+}
+
+/* Processing Animation */
+.processing-indicator {
+  color: #ffff00;
+}
+
+.blinking-dots {
+  animation: blink-dots 1.5s infinite;
+}
+
+@keyframes blink-dots {
+  0%, 33% { opacity: 1; }
+  34%, 66% { opacity: 0.3; }
+  67%, 100% { opacity: 1; }
+}
+
+/* Input Line */
+.input-line {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  position: sticky;
+  bottom: 0;
+  background: #000000;
+  padding: 4px 0;
+}
+
+.prompt {
+  color: #ffffff;
+  font-weight: bold;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.terminal-input:disabled {
+  opacity: 0.6;
+}
+
+.cursor {
+  color: #ffffff;
+  animation: blink-cursor 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Scrollbar Styling */
+.ai-dos-terminal-content::-webkit-scrollbar {
+  width: 12px;
+}
+
+.ai-dos-terminal-content::-webkit-scrollbar-track {
+  background: #000000;
+  border: 1px solid #00ff00;
+}
+
+.ai-dos-terminal-content::-webkit-scrollbar-thumb {
+  background: #00ff00;
+  border: 1px solid #008000;
+}
+
+.ai-dos-terminal-content::-webkit-scrollbar-thumb:hover {
+  background: #40ff40;
+}
+
+/* Retro CRT Effect (Optional) */
+.ai-dos-terminal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 255, 0, 0.03) 2px,
+    rgba(0, 255, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ai-dos-terminal-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .ai-dos-terminal {
+    font-size: 12px;
+  }
+  
+  .ai-dos-terminal-content {
+    padding: 12px;
+  }
+  
+  .ai-dos-terminal-header {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  
+  .ai-dos-close-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-dos-terminal {
+    font-size: 11px;
+  }
+  
+  .ai-dos-terminal-content {
+    padding: 8px;
+  }
+  
+  .ai-dos-title {
+    font-size: 10px;
+    gap: 4px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .ai-dos-terminal {
+    background: #000000;
+    color: #ffffff;
+  }
+  
+  .terminal-line.system,
+  .terminal-line.output {
+    color: #ffffff;
+  }
+  
+  .processing-indicator {
+    color: #ffffff;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .cursor,
+  .blinking-dots {
+    animation: none;
+  }
+  
+  .ai-dos-terminal::before {
+    display: none;
+  }
+} 
