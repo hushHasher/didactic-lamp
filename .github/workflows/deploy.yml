@@ -25,7 +25,8 @@ jobs:
       - name: Install Dependencies 📦
         run: npm ci # Use 'ci' for faster, cleaner installs in CI
 
-            - name: Build Project 🏗️        run: npm run build
+      - name: Build Project 🏗️
+        run: npm run build # Assumes your build script is 'npm run build'
 
       - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4 # Action to deploy build folder
