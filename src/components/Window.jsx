@@ -1,18 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import './Window.css';
 
-function Window({ 
-  children, 
-  title, 
-  onClose, 
-  initialPosition = { x: 100, y: 100 }, 
-  initialSize = { width: 600, height: 400 },
-  minSize = { width: 300, height: 200 },
-  resizable = true,
-  icon = '📁',
-  zIndex: 1000,
-  onFocus
-}) {
+function Window({   children,   title,   onClose,   initialPosition = { x: 100, y: 100 },   initialSize = { width: 600, height: 400 },  minSize = { width: 300, height: 200 },  resizable = true,  icon = '📁',  zIndex = 1000,  onFocus}) {
   const windowRef = useRef(null);
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState(initialSize);
