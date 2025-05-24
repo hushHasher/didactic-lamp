@@ -10,7 +10,7 @@
     radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 2px, transparent 2px),
     radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 50px 50px, 25px 25px;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
 }
 

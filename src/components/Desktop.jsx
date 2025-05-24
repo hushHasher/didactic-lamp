@@ -4,7 +4,7 @@ import WindowManager from './WindowManager';
 import DosTerminal from '../DosTerminal';
 import './Desktop.css';
 
-function Desktop({ children }) {
+function Desktop() {
   const [windows, setWindows] = useState([]);
   const navigate = useNavigate();
 
@@ -238,34 +238,7 @@ function Desktop({ children }) {
     icon.action();
   }, []);
 
-  return (
-    <div className="desktop">
-      <WindowManager 
-        windows={windows} 
-        onWindowsChange={setWindows}
-      >
-        {children}
-        
-        {/* Desktop Icons */}
-        <div className="desktop-icons">
-          {desktopIcons.map(icon => (
-            <div
-              key={icon.id}
-              className="desktop-icon"
-              style={{
-                left: icon.position.x,
-                top: icon.position.y,
-              }}
-              onDoubleClick={() => handleIconDoubleClick(icon)}
-            >
-              <div className="icon-image">{icon.icon}</div>
-              <div className="icon-label">{icon.name}</div>
-            </div>
-          ))}
-        </div>
-      </WindowManager>
-    </div>
-  );
+  return (    <div className="desktop">      <WindowManager         windows={windows}         onWindowsChange={setWindows}      >        {/* Desktop Icons */}        <div className="desktop-icons">          {desktopIcons.map(icon => (            <div              key={icon.id}              className="desktop-icon"              style={{                left: icon.position.x,                top: icon.position.y,              }}              onDoubleClick={() => handleIconDoubleClick(icon)}            >              <div className="icon-image">{icon.icon}</div>              <div className="icon-label">{icon.name}</div>            </div>          ))}        </div>      </WindowManager>    </div>  );
 }
 
 export default Desktop; 

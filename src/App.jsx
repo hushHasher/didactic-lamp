@@ -13,7 +13,7 @@ import './App.css'; // Main layout styles
 
 function App() {
   // ADDED: State for boot sequence
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(false);
 
   // State for Terminal Visibility
   const [showTerminal, setShowTerminal] = useState(false);
@@ -69,7 +69,8 @@ function App() {
   }
 
   return (
-    <Desktop>
+    <>
+      <Desktop />
       <div className="App"> {/* Main layout container */}
 
         {/* --- Navigation Bar --- */}
@@ -157,7 +158,7 @@ function App() {
         )}
 
       </div> {/* Closes <div className="App"> */}
-    </Desktop>
+    </>
   );
 }
 
