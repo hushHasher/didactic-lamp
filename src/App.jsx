@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Link } from 'react-router-dom'; // Import Router components
 import DosTerminal from './DosTerminal';
+import ErrorBoundary from './components/ErrorBoundary.jsx'; // Import ErrorBoundary
 import Desktop from './components/Desktop'; // Import Desktop component
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
@@ -19,17 +20,10 @@ function App() {
   const [showTerminal, setShowTerminal] = useState(false);
   // State for Mobile Menu Toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [focusTerminalNextOpen, setFocusTerminalNextOpen] = useState(false); // ADDED: State for focus trigger
 
   // Wrap toggleTerminal with useCallback to give it a stable identity
   const toggleTerminal = useCallback(() => {
-    setShowTerminal(prevState => {
-      const nextState = !prevState;
-      if (nextState) { // If terminal is being opened
-        setFocusTerminalNextOpen(true);
-      }
-      return nextState;
-    });
+    setShowTerminal(prevState => !prevState);
   }, []);
 
   // Handler to toggle mobile menu
@@ -53,15 +47,6 @@ function App() {
   const handleBootComplete = useCallback(() => {
     setBooting(false);
   }, []);
-
-  // ADDED: useEffect to reset focusTerminalNextOpen after it has been consumed
-  useEffect(() => {
-    if (showTerminal && focusTerminalNextOpen) {
-      // After DosTerminal has received shouldFocusOnOpen={true} and (presumably) acted on it,
-      // reset the trigger so it doesn't re-focus on subsequent App re-renders while terminal is still open.
-      setFocusTerminalNextOpen(false);
-    }
-  }, [showTerminal, focusTerminalNextOpen]);
 
   // ADDED: Conditional rendering for boot sequence
   if (booting) {
@@ -135,14 +120,16 @@ function App() {
 
         {/* --- Main Content Area (Where Pages Render) --- */}
         <main className="enhanced-main">
-          {/* --- Define Page Routes --- */}
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-          {/* --- End Page Routes --- */}
+          <ErrorBoundary>
+            {/* --- Define Page Routes --- */}
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+            {/* --- End Page Routes --- */}
+          </ErrorBoundary>
         </main>
         {/* --- End Main Content Area --- */}
 
@@ -152,9 +139,11 @@ function App() {
 
         {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
         {showTerminal && (
-          <div className="terminal-container">
-            <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
-          </div>
+          <ErrorBoundary>
+            <div className="terminal-container">
+              <DosTerminal onClose={toggleTerminal} /> {/* shouldFocusOnOpen prop removed */}
+            </div>
+          </ErrorBoundary>
         )}
 
       </div> {/* Closes <div className="App"> */}

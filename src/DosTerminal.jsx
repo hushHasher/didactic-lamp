@@ -52,85 +52,63 @@ const fileSystem = {
 };
 
 // Helper function to navigate the file system object
+// Traverses the 'fs' object based on a string 'path' (e.g., "C:\DOS\FORMAT.COM")
 function getFileSystemEntry(path, fs) {
-  console.log(`[GFS] Searching for: "${path}"`); // Add prefix for clarity
-  const parts = path.toUpperCase().split('\\').filter(p => p);
-  console.log(`[GFS] Parsed parts:`, parts);
+  const parts = path.toUpperCase().split('\\').filter(p => p); // Normalize and split path
 
-  if (parts.length === 0) {
-    console.log("[GFS] Error: No parts after parsing.");
+  if (parts.length === 0) { // Empty path is invalid
     return null;
   }
 
   // Handle root explicitly first ('C:' or 'C:\')
   if (parts.length === 1 && parts[0] === 'C:') {
     if (fs['C:'] && fs['C:'].type === 'directory') {
-      console.log("[GFS] Success: Returning root C: entry.");
-      return fs['C:']; // Return the C: object itself
+      return fs['C:']; // Return the C: directory object
     } else {
-      console.log("[GFS] Error: C: entry not found or not a directory in filesystem root.");
-      return null;
+      return null; // C: drive not found or not a directory
     }
   }
 
-  // Check starting point is C:
+  // Path must start with 'C:'
   if (parts[0] !== 'C:') {
-    console.log("[GFS] Error: Path does not start with C:");
     return null;
   }
 
-  let currentLevel = fs['C:']; // Start at the C: object
+  let currentLevel = fs['C:']; // Start traversal from the C: root
   if (!currentLevel || currentLevel.type !== 'directory') {
-    console.log("[GFS] Error: C: object not found or not a directory at start.");
-    return null;
+    return null; // C: root is missing or invalid
   }
 
-  // Iterate through path components *after* C: (i starts at 1)
+  // Iterate through path components *after* 'C:' (parts[0])
   for (let i = 1; i < parts.length; i++) {
     const partName = parts[i];
-    console.log(`[GFS] Traversing to part ${i}: "${partName}"`);
 
-    // Determine where to look for the next partName
-    // If the currentLevel *is* the root object (fs['C:']), look directly within its properties.
-    // Otherwise (if currentLevel is a subdirectory object), look within its 'children' property.
+    // 'children' property holds subdirectory contents.
+    // For the C: drive itself, its properties are the children.
     const childrenSource = (currentLevel === fs['C:']) ? currentLevel : currentLevel.children;
-
-    console.log(`[GFS]   CurrentLevel is root? ${currentLevel === fs['C:']}. Part name: ${partName}`);
     
-    // Ensure childrenSource exists (especially important for subdirs that might lack a 'children' property)
-    if (!childrenSource) {
-        console.log(`[GFS]   Error: No children source found for current level.`);
+    if (!childrenSource) { // No children found where expected
         return null;
     }
 
-    // Check if the part exists as a key in the correct source
-    if (Object.prototype.hasOwnProperty.call(childrenSource, partName)) { // Use safe hasOwnProperty check
-      currentLevel = childrenSource[partName];
-      console.log(`[GFS]   Found part "${partName}". New level type: ${currentLevel?.type}`);
+    // Check if the current part of the path exists in the current directory level
+    if (Object.prototype.hasOwnProperty.call(childrenSource, partName)) {
+      currentLevel = childrenSource[partName]; // Move to the next level
 
-      // If this is an *intermediate* part of the path, it *must* be a directory to continue.
-      // We check this only if we are not at the last part (i < parts.length - 1).
-      if (i < parts.length - 1) {
+      // If this is an intermediate part of the path, it must be a directory
+      if (i < parts.length - 1) { // Not the last part of the path
           if (!currentLevel || currentLevel.type !== 'directory') {
-            console.log(`[GFS]   Error: Intermediate part "${partName}" is not a directory.`);
-            return null; // Cannot traverse further through a file or invalid entry
+            return null; // Intermediate path segment is not a directory
           }
       }
-      // If it's the last part, we don't care about the type here; we just return what we found.
-      // The calling function (e.g., 'cd' or 'type') will validate the type if needed.
-
     } else {
-      console.log(`[GFS]   Error: Part "${partName}" not found in children source.`);
-      // console.log(`[GFS]   Children source keys:`, Object.keys(childrenSource)); // Log keys for debugging
-      return null; // Specific part not found
+      return null; // Path segment not found
     }
   }
-
-  console.log(`[GFS] Success: Returning final entry for "${path}" of type ${currentLevel?.type}`, currentLevel);
-  return currentLevel; // Return the final entry found (could be file or directory)
+  return currentLevel; // Return the final file or directory entry
 }
 
-// ADDED: List of safe, non-navigating, non-exiting commands for auto-execution
+// List of commands for auto-execution upon terminal start
 const autoCommands = [
   { cmd: 'dir', args: [] },
   { cmd: 'help', args: [] },
@@ -142,48 +120,65 @@ const autoCommands = [
 ];
 
 function DosTerminal(props) {
-  const { onClose, shouldFocusOnOpen } = props; // Destructure props
-  const divRef = useRef(null);
-  const termInstanceRef = useRef(null);
-  const fitAddonInstanceRef = useRef(null);
-  const keyListenerRef = useRef(null);
-  const dataListenerRef = useRef(null);
-  const navigate = useNavigate();
-  const terminalWindowRef = useRef(null);
+  const { onClose } = props; // onClose callback to close the terminal
+  const divRef = useRef(null); // Ref for the div where Xterm will be mounted
+  const termInstanceRef = useRef(null); // Ref to store the Xterm Terminal instance
+  const fitAddonInstanceRef = useRef(null); // Ref for Xterm FitAddon instance
+  const keyListenerRef = useRef(null); // Ref for Xterm key event listener disposable
+  const dataListenerRef = useRef(null); // Ref for Xterm data event listener disposable
+  const navigate = useNavigate(); // React Router navigation hook
+  const terminalWindowRef = useRef(null); // Ref for the draggable/resizable terminal window div
 
-  // State for window position
+  // --- Window State Management ---
+  // `position`: Current {x, y} coordinates of the terminal window.
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  // `isDragging`: Boolean, true if the window is currently being dragged.
   const [isDragging, setIsDragging] = useState(false);
+  // `dragStartOffset`: {x, y} offset from mouse click to window's top-left corner during drag.
   const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 });
+  // `hasBeenDragged`: Boolean, true if the window has been dragged at least once. Affects initial positioning.
   const [hasBeenDragged, setHasBeenDragged] = useState(false);
+  // `initialSize`: {width, height} of the terminal, captured before first drag or from parent.
   const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
-  const [windowState, setWindowState] = useState('normal'); // 'normal', 'minimized', 'maximized'
+  // `windowState`: Manages if the window is 'normal', 'minimized', or 'maximized'.
+  const [windowState, setWindowState] = useState('normal');
+  // `normalSizeBeforeMaximize`: Stores {width, height} before maximizing, to restore later.
   const [normalSizeBeforeMaximize, setNormalSizeBeforeMaximize] = useState({ width: 0, height: 0 });
+  // `normalPositionBeforeMaximize`: Stores {x, y} position before maximizing.
   const [normalPositionBeforeMaximize, setNormalPositionBeforeMaximize] = useState({ x: 0, y: 0 });
-  // Store position/size before minimizing to restore accurately
+  // `positionBeforeMinimize`: Stores {x, y} position before minimizing.
   const [positionBeforeMinimize, setPositionBeforeMinimize] = useState({ x: 0, y: 0 });
+  // `sizeBeforeMinimize`: Stores {width, height} before minimizing.
   const [sizeBeforeMinimize, setSizeBeforeMinimize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
+    // This effect initializes the terminal window's size and position based on its parent container.
+    // It only runs if the window hasn't been dragged yet and is in 'normal' state.
+    // This allows the window to initially fill its container or adopt a default size/position.
     if (terminalWindowRef.current && terminalWindowRef.current.parentElement && !hasBeenDragged && windowState === 'normal') {
       const parentRect = terminalWindowRef.current.parentElement.getBoundingClientRect();
       const newSize = { width: parentRect.width, height: parentRect.height };
       
+      // Initialize various size/position states if they haven't been set yet
       if (initialSize.width === 0) setInitialSize(newSize);
       if (normalSizeBeforeMaximize.width === 0) setNormalSizeBeforeMaximize(newSize);
-      if (sizeBeforeMinimize.width === 0) setSizeBeforeMinimize(newSize); // Initialize for minimize restore
+      if (sizeBeforeMinimize.width === 0) setSizeBeforeMinimize(newSize);
       
       const newPosition = { x: parentRect.left, y: parentRect.top };
       if (position.x === 0 && position.y === 0) setPosition(newPosition);
       if (normalPositionBeforeMaximize.x === 0 && normalPositionBeforeMaximize.y === 0) setNormalPositionBeforeMaximize(newPosition);
-      if (positionBeforeMinimize.x === 0 && positionBeforeMinimize.y === 0) setPositionBeforeMinimize(newPosition); // Initialize for minimize restore
+      if (positionBeforeMinimize.x === 0 && positionBeforeMinimize.y === 0) setPositionBeforeMinimize(newPosition);
     }
   }, [hasBeenDragged, windowState, initialSize, normalSizeBeforeMaximize, position, normalPositionBeforeMaximize, sizeBeforeMinimize, positionBeforeMinimize]);
 
+  // --- Window Drag Handlers ---
   const handleMouseDown = (e) => {
-    if (e.button !== 0 || windowState === 'maximized' || windowState === 'minimized') return; // Don't drag if maximized or minimized
+    // Only allow dragging with the primary mouse button and if window is not maximized/minimized.
+    if (e.button !== 0 || windowState === 'maximized' || windowState === 'minimized') return;
     setIsDragging(true);
     
+    // If this is the first drag, capture initial size/position relative to parent or current state.
+    // This ensures subsequent drags use a consistent base size.
     if (!hasBeenDragged) {
       const parentElement = terminalWindowRef.current.parentElement;
       const currentWindowRect = terminalWindowRef.current.getBoundingClientRect();
@@ -228,6 +223,7 @@ function DosTerminal(props) {
     setIsDragging(false);
   }, []);
 
+  // Effect to add/remove global mouse listeners for dragging.
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
@@ -236,15 +232,18 @@ function DosTerminal(props) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     }
+    // Cleanup: remove listeners when component unmounts or isDragging changes.
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
+  // --- Window Control Button Handlers ---
   const handleCloseButtonClick = (e) => {
-    e.stopPropagation(); 
-    onClose?.();
+    e.stopPropagation(); // Prevent title bar's onMouseDown from firing.
+    onClose?.(); // Call the provided onClose prop.
+    // Reset all window state to default for next open.
     setWindowState('normal'); 
     setHasBeenDragged(false);
     setPosition({ x: 0, y: 0 }); 
@@ -254,8 +253,8 @@ function DosTerminal(props) {
     setSizeBeforeMinimize({width: 0, height: 0});
     setPositionBeforeMinimize({x: 0, y: 0});
 
+    // Dispose Xterm instance and its listeners if they exist.
     if (termInstanceRef.current) {
-      console.log("[DosTerminal-CloseButton] Disposing terminal instance.");
       termInstanceRef.current.dispose();
       termInstanceRef.current = null;
       if (keyListenerRef.current) { keyListenerRef.current.dispose(); keyListenerRef.current = null; }
@@ -267,15 +266,22 @@ function DosTerminal(props) {
     e.stopPropagation();
     const currentRect = terminalWindowRef.current.getBoundingClientRect();
 
-    if (windowState === 'minimized') {
+    if (windowState === 'minimized') { // If already minimized, restore to normal.
       setWindowState('normal');
-      setPosition(positionBeforeMinimize);
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
-    } else {
+      setPosition(positionBeforeMinimize); // Restore to position before minimize.
+      // Use double requestAnimationFrame to ensure DOM is updated before fitting.
+      // This helps xterm's FitAddon calculate dimensions correctly after a state change.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          fitAddonInstanceRef.current?.fit();
+        });
+      });
+    } else { // If normal or maximized, minimize.
+      // Store current size/position to restore from minimize state later.
       if (windowState === 'normal') {
         setPositionBeforeMinimize({ x: currentRect.left, y: currentRect.top });
         setSizeBeforeMinimize({ width: currentRect.width, height: currentRect.height });
-      } else if (windowState === 'maximized') {
+      } else if (windowState === 'maximized') { // If maximized, store the "normal" state before maximize.
         setPositionBeforeMinimize(normalPositionBeforeMaximize);
         setSizeBeforeMinimize(normalSizeBeforeMaximize);
       }
@@ -286,46 +292,76 @@ function DosTerminal(props) {
   const handleMaximizeButtonClick = (e) => {
     e.stopPropagation();
 
-    if (windowState === 'maximized') {
+    if (windowState === 'maximized') { // If already maximized, restore to normal.
       setWindowState('normal');
-      setPosition(normalPositionBeforeMaximize);
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
-    } else {
+      setPosition(normalPositionBeforeMaximize); // Restore to position/size before maximize.
+      // Double requestAnimationFrame for FitAddon, similar to minimize.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          fitAddonInstanceRef.current?.fit();
+        });
+      });
+    } else { // If normal or minimized, maximize.
       const currentRect = terminalWindowRef.current.getBoundingClientRect();
+      // Store current size/position to restore from maximized state later.
       if (windowState === 'normal') {
         setNormalPositionBeforeMaximize({ x: currentRect.left, y: currentRect.top });
         setNormalSizeBeforeMaximize({ width: currentRect.width, height: currentRect.height });
-      } else if (windowState === 'minimized') {
+      } else if (windowState === 'minimized') { // If minimized, use the pre-minimize state.
         setNormalPositionBeforeMaximize(positionBeforeMinimize);
         setNormalSizeBeforeMaximize(sizeBeforeMinimize);
       }
       setWindowState('maximized');
-      setTimeout(() => fitAddonInstanceRef.current?.fit(), 100);
+      // Double requestAnimationFrame for FitAddon.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          fitAddonInstanceRef.current?.fit();
+        });
+      });
     }
   };
 
+  // --- Main useEffect for Xterm.js Initialization and Auto-Commands ---
   useEffect(() => {
-    console.log("[DosTerminal-MainEffect] Initializing or re-running.");
+    let term; // Holds the Xterm instance for this effect scope.
+    let currentCommand = ''; // Stores the command being typed by the user.
+    let currentPath = 'C:\\'; // Manages the current directory path within the terminal.
+    let processingAutoCommand = false; // Flag to prevent user input during auto-command execution.
+    let autoCommandTimerId = null; // Stores ID of setTimeout for auto-commands, for cleanup.
 
-    let term;
-    let currentCommand = ''; // This will be managed by the auto-command runner initially
-    let currentPath = 'C:\\';
-    let processingAutoCommand = false; // Flag to disable user input during auto commands
-    let autoCommandTimerId = null; // Added: To store the setTimeout ID for auto commands
+    // --- Consolidated Command Execution Function ---
+    // Processes a given command string, updates terminal output, and manages path changes.
+    // `isAutoCmd` flag differentiates between user-entered commands and automated startup commands.
+    const executeCommand = (commandString, termInstance, path, isAutoCmd = false) => {
+      const [cmd, ...args] = commandString.trim().split(/\s+/); // Parse command and arguments.
+      const processedCmd = cmd.toLowerCase(); // Normalize command to lowercase.
+      let newPath = path; // Initialize newPath with current path; 'cd' will modify this.
 
-    // Helper function to process a single command programmatically (subset of onKey Enter logic)
-    const processCommandInternally = (commandString, termInstance, path) => {
-      // This function will be called by the auto-command runner.
-      // It needs access to termInstance and path (currentPath for CD)
-      // It should return the new path if CD command was successful.
-      console.log(`[AutoCmd] Processing internally: ${commandString}`);
-      const [cmd, ...args] = commandString.trim().split(/\s+/);
-      const processedCmd = cmd.toLowerCase();
-      let newPath = path; // Keep track of path changes for subsequent auto-commands
-
-      // --- Replicated Command Handling Logic (Simplified for auto-commands) ---
-      // IMPORTANT: Ensure this logic doesn't call navigate() or onClose() for auto-commands
-      if (processedCmd === 'help') {
+      // --- Command Implementations ---
+      if (processedCmd === 'about') {
+        if (!isAutoCmd) { // User command: navigate and close terminal.
+          termInstance.writeln('Navigating to C:\\ABOUT...');
+          navigate('/about');
+          onClose?.();
+        } else { // Auto command: skip navigation.
+          termInstance.writeln('Skipping navigation for auto-command: about');
+        }
+      } else if (processedCmd === 'projects') {
+        if (!isAutoCmd) { // User command: navigate and close.
+          termInstance.writeln('Navigating to C:\\PROJECTS...');
+          navigate('/projects');
+          onClose?.();
+        } else { // Auto command: skip.
+          termInstance.writeln('Skipping navigation for auto-command: projects');
+        }
+      } else if (processedCmd === 'exit') {
+        if (!isAutoCmd) { // User command: close terminal.
+          termInstance.writeln('Closing terminal interface...');
+          onClose?.();
+        } else { // Auto command: skip.
+           termInstance.writeln('Skipping exit for auto-command: exit');
+        }
+      } else if (processedCmd === 'help') { // Display help message.
         termInstance.writeln('Available commands:');
         termInstance.writeln('  help          - Displays this help message.');
         termInstance.writeln('  about         - Navigates to the About section.');
@@ -336,65 +372,93 @@ function DosTerminal(props) {
         termInstance.writeln('  clear         - Clears the terminal screen.');
         termInstance.writeln('  exit          - Closes the terminal interface.');
       } else if (processedCmd === 'clear') {
-         termInstance.clear();
+        termInstance.clear();
       } else if (processedCmd === 'dir') {
-          const dirToListPath = args.length > 0 ? (path + args.join(' ').toUpperCase() + '\\') : path;
-          const dirToList = getFileSystemEntry(dirToListPath, fileSystem);
-          if (dirToList && dirToList.type === 'directory') {
-              termInstance.writeln(` Volume in drive C is WEYLAND_OS`);
-              termInstance.writeln(` Volume Serial Number is 1986-0426`);
-              termInstance.writeln(` Directory of ${dirToListPath.toUpperCase()}`);
-              termInstance.writeln('');
-              let totalFiles = 0, totalDirs = 0, totalBytes = 0;
-              const formatName = (name) => name.includes('.') ? name.split('.')[0].substring(0, 8).padEnd(8) + ' ' + name.split('.')[1].substring(0, 3).padEnd(3) : name.substring(0, 8).padEnd(8) + '   ';
-              const padLeft = (str, len) => String(str).padStart(len, ' ');
-              const childrenContainer = dirToList.children || dirToList;
-              const keysToList = Object.keys(childrenContainer).filter(k => k !== 'type' && k !== 'date' && k !== 'time' && k !== 'children');
-              if (dirToListPath.toUpperCase() !== 'C:\\') {
-                  termInstance.writeln(`${formatName('.')}         <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
-                  termInstance.writeln(`${formatName('..')}        <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
-                  totalDirs += 2;
-              }
-              keysToList.forEach(name => {
-                  const item = childrenContainer[name];
-                  if (item.type === 'directory') { termInstance.writeln(`${formatName(name.toUpperCase())}         <DIR>          ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalDirs++; }
-                  else if (item.type === 'file') { const size = item.size || 0; termInstance.writeln(`${formatName(name.toUpperCase())}    ${padLeft(size.toLocaleString(), 10)} ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalFiles++; totalBytes += size; }
-              });
-              termInstance.writeln('');
-              termInstance.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
-              termInstance.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft((512 * 1024 * 1024).toLocaleString(), 12)} bytes free`);
-          } else { termInstance.writeln('Invalid path for DIR.'); }
+        const dirToListPath = args.length > 0 ? (path + args.join(' ').toUpperCase() + '\\') : path;
+        const dirToList = getFileSystemEntry(dirToListPath, fileSystem);
+        if (dirToList && dirToList.type === 'directory') {
+            termInstance.writeln(` Volume in drive C is WEYLAND_OS`);
+            termInstance.writeln(` Volume Serial Number is 1986-0426`);
+            termInstance.writeln(` Directory of ${dirToListPath.toUpperCase()}`);
+            termInstance.writeln('');
+            let totalFiles = 0, totalDirs = 0, totalBytes = 0;
+            const formatName = (name) => name.includes('.') ? name.split('.')[0].substring(0, 8).padEnd(8) + ' ' + name.split('.')[1].substring(0, 3).padEnd(3) : name.substring(0, 8).padEnd(8) + '   ';
+            const padLeft = (str, len) => String(str).padStart(len, ' ');
+            const childrenContainer = dirToList.children || dirToList; // Handles C: root vs subdirs
+            const keysToList = Object.keys(childrenContainer).filter(k => k !== 'type' && k !== 'date' && k !== 'time' && k !== 'children');
+
+            // Special handling for '.' and '..' in subdirectories
+            if (dirToListPath.toUpperCase() !== 'C:\\') {
+                termInstance.writeln(`${formatName('.')}         <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
+                termInstance.writeln(`${formatName('..')}        <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
+                totalDirs += 2;
+            }
+
+            keysToList.forEach(name => {
+                const item = childrenContainer[name];
+                if (item.type === 'directory') { termInstance.writeln(`${formatName(name.toUpperCase())}         <DIR>          ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalDirs++; }
+                else if (item.type === 'file') { const size = item.size || 0; termInstance.writeln(`${formatName(name.toUpperCase())}    ${padLeft(size.toLocaleString(), 10)} ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalFiles++; totalBytes += size; }
+            });
+            termInstance.writeln('');
+            termInstance.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
+            termInstance.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft((512 * 1024 * 1024).toLocaleString(), 12)} bytes free`); // Example free space
+        } else { termInstance.writeln('Invalid path for DIR.'); }
+      } else if (processedCmd === 'cd') {
+        const targetDirRaw = args.join(' ').trim();
+        if (!targetDirRaw) { termInstance.writeln(path.toUpperCase()); }
+        else {
+            const targetDir = targetDirRaw.toUpperCase(); let potentialNewPath;
+            if (targetDir === '..') {
+                const parts = path.toUpperCase().split('\\').filter(p => p && p !== 'C:');
+                if (parts.length > 0) parts.pop();
+                potentialNewPath = 'C:\\' + parts.join('\\');
+                if (parts.length > 0) potentialNewPath += '\\';
+            } else if (targetDir.startsWith('C:\\')) {
+                potentialNewPath = targetDir;
+                if (!potentialNewPath.endsWith('\\') && potentialNewPath.toUpperCase() !== 'C:') potentialNewPath += '\\';
+            } else {
+                const basePath = path.toUpperCase() === 'C:\\' ? path : (path.endsWith('\\') ? path : path + '\\');
+                potentialNewPath = basePath + targetDir;
+                if (!potentialNewPath.endsWith('\\')) potentialNewPath += '\\';
+            }
+            if (potentialNewPath.toUpperCase() === 'C:') potentialNewPath = 'C:\\'; // Normalize C:
+            
+            const entry = getFileSystemEntry(potentialNewPath, fileSystem);
+            if (entry && entry.type === 'directory') { newPath = potentialNewPath.toUpperCase(); }
+            else { termInstance.writeln('Invalid directory'); }
+        }
       } else if (processedCmd === 'type') {
-          const fileName = args.join(' ').trim().toUpperCase();
-          if (!fileName) { termInstance.writeln('Usage: TYPE <filename>'); }
-          else {
-              const currentDirEntry = getFileSystemEntry(path, fileSystem);
-              let fileEntry = null;
-              const childrenSource = currentDirEntry?.children || currentDirEntry;
-              if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) { fileEntry = childrenSource[fileName]; }
-              if (fileEntry && fileEntry.type === 'file') { fileEntry.content.split('\n').forEach(line => termInstance.writeln(line)); }
-              else if (fileEntry && fileEntry.type === 'directory') { termInstance.writeln(`Access denied - ${fileName} is a directory.`); }
-              else { termInstance.writeln(`File not found - ${fileName}`); }
-          }
-      // Add other safe commands here if needed, ensure they don't navigate or exit.
-      // Specifically, do NOT include 'about', 'projects', 'exit' in auto-run logic if they call navigate() or onClose()
-      // The 'cd' command is tricky for auto-run unless path state is carefully managed.
-      // For simplicity, the autoCommands list above avoids 'cd'.
+        const fileName = args.join(' ').trim().toUpperCase();
+        if (!fileName) { termInstance.writeln('Usage: TYPE <filename>'); }
+        else {
+            const currentDirEntry = getFileSystemEntry(path, fileSystem);
+            let fileEntry = null;
+            // Check in children if currentDirEntry is a directory with children, or directly if it's the root C:
+            const childrenSource = currentDirEntry?.children || (currentDirEntry === fileSystem['C:'] ? fileSystem['C:'] : null);
+
+            if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) {
+                 fileEntry = childrenSource[fileName];
+            }
+
+            if (fileEntry && fileEntry.type === 'file') { fileEntry.content.split('\n').forEach(line => termInstance.writeln(line)); }
+            else if (fileEntry && fileEntry.type === 'directory') { termInstance.writeln(`Access denied - ${fileName} is a directory.`); }
+            else { termInstance.writeln(`File not found - ${fileName}`); }
+        }
       } else if (processedCmd !== '') {
         termInstance.writeln(`Bad command or file name: ${processedCmd}`);
       }
-      return newPath; // Return path (might be updated if 'cd' was implemented for auto)
+      return newPath; // Return the new path (updated if 'cd' was successful).
     };
 
+    // --- Xterm Initialization and Auto-Command Sequence ---
+    // This block runs only if the divRef is available and no terminal instance exists yet.
     if (divRef.current && !termInstanceRef.current) {
-      console.log("[DosTerminal-MainEffect] Initializing NEW Terminal instance.");
+      const newFitAddon = new FitAddon(); // Addon for fitting terminal to container size.
+      fitAddonInstanceRef.current = newFitAddon;
 
-      // ALWAYS create a new FitAddon for a new Terminal instance
-      const newFitAddon = new FitAddon();
-      fitAddonInstanceRef.current = newFitAddon; // Update the ref to point to the new addon
-
+      // Create a new Xterm.js Terminal instance.
       term = new Terminal({
-        cursorBlink: true,
+        cursorBlink: true, // Enable cursor blinking.
         cursorStyle: 'block',
         fontFamily: 'monospace',
         allowProposedApi: true,
@@ -405,34 +469,32 @@ function DosTerminal(props) {
           cursorAccent: '#0000AA'
         }
       });
-      termInstanceRef.current = term;
+      termInstanceRef.current = term; // Store the instance in a ref for access outside this effect.
 
       try {
-        term.open(divRef.current);
-        term.loadAddon(newFitAddon); // Load the NEW addon
+        term.open(divRef.current); // Mount Xterm to the designated div.
+        term.loadAddon(newFitAddon); // Load the FitAddon.
 
-        // Assign the timer ID to autoCommandTimerId
-        autoCommandTimerId = setTimeout(async () => { // Made outer setTimeout async to use await for delays
+        // --- Auto-Command Execution Sequence (simulates boot-up activity) ---
+        // Wrapped in setTimeout to allow Xterm to render first.
+        autoCommandTimerId = setTimeout(async () => {
           try {
-            // Before doing anything, check if the terminal instance this timeout was for still exists
-            // This is a safeguard, primary fix is clearing the timeout on unmount.
+            // Safety check: ensure this terminal instance is still the active one.
             if (!termInstanceRef.current || termInstanceRef.current !== term) {
-                console.warn("[DosTerminal-AutoCmdTimeout] Stale timeout for a disposed/recreated terminal. Skipping execution.");
-                return;
+                return; // Stale timeout, do nothing.
             }
-            newFitAddon.fit(); // Call fit() on the NEW addon
+            newFitAddon.fit(); // Fit terminal to container size.
             term.writeln("WEYLAND CORP (c) More human than human");
             term.writeln("MS-DOS Version 6.22");
             term.writeln("");
-            // No initial "Type help..." here, auto commands will run first
 
-            processingAutoCommand = true; // Disable user input
-            term.focus(); // Focus the terminal for visual effect if desired
+            processingAutoCommand = true; // Disable user input during auto-commands.
+            term.focus(); // Focus the terminal.
 
+            // Select a random number of auto-commands to run.
             const numAutoCommands = Math.floor(Math.random() * 2) + 3; // 3 or 4 commands
             const commandsToRun = [];
             const usedIndices = new Set();
-
             while (commandsToRun.length < numAutoCommands && usedIndices.size < autoCommands.length) {
               const randomIndex = Math.floor(Math.random() * autoCommands.length);
               if (!usedIndices.has(randomIndex)) {
@@ -441,191 +503,115 @@ function DosTerminal(props) {
               }
             }
             
-            let autoCommandPath = currentPath; // Use a local path for auto commands session
+            // Execute selected auto-commands sequentially with delays.
+            // `autoCommandPath` is used here to manage path changes specifically for this sequence,
+            // though in the current `executeCommand`, `cd` for auto-commands doesn't change `currentPath` for the main scope.
+            // let autoCommandPath = currentPath; // This was how it was, but currentPath is updated directly now.
 
             for (const autoCmdObj of commandsToRun) {
               const commandString = `${autoCmdObj.cmd} ${autoCmdObj.args.join(' ')}`.trim();
-              term.write(`\r\n${autoCommandPath.toUpperCase()}> ${commandString}`);
-              await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400)); // Short delay after typing
-              term.writeln(''); // Newline for command output
-              autoCommandPath = processCommandInternally(commandString, term, autoCommandPath); // Process and get new path
-              await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500)); // Delay after command output
+              term.write(`\r\n${currentPath.toUpperCase()}> ${commandString}`); // Simulate typing the command.
+              await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400)); // Delay.
+              term.writeln(''); // Newline for command output.
+              // Process the command; `isAutoCmd = true` prevents navigation/exit.
+              currentPath = executeCommand(commandString, term, currentPath, true);
+              await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500)); // Delay.
             }
 
-            processingAutoCommand = false; // Re-enable user input processing
-            term.writeln("\nType 'help' for a list of available commands."); // Now show help prompt
-            updatePrompt(); // Show final prompt for user
+            processingAutoCommand = false; // Re-enable user input.
+            term.writeln("\nType 'help' for a list of available commands.");
+            updatePrompt(); // Display the command prompt.
 
-            // Setup user input listeners AFTER auto commands are done
+            // --- Setup User Input Event Listeners ---
+            // Dispose any existing listeners before attaching new ones (important for HMR).
             keyListenerRef.current?.dispose();
             dataListenerRef.current?.dispose();
 
+            // Handle key events (Enter, Backspace).
             keyListenerRef.current = term.onKey(e => {
-              if (processingAutoCommand) return; // Ignore user input during auto commands
+              if (processingAutoCommand) return; // Ignore input if auto-commands are running.
               const { domEvent } = e;
               if (domEvent.key === 'Enter') {
-                // ... (existing Enter logic, ensuring it uses 'currentPath' and updates 'currentCommand')
-                console.log(`[DosTerminal-onKey-Enter] Current command: '${currentCommand}'`);
-                term.writeln('');
-                const [command, ...args] = currentCommand.trim().split(/\s+/);
-                const processedCommand = command.toLowerCase();
-                console.log(`[DosTerminal-onKey-Enter] Processing command: '${processedCommand}', Args:`, args);
-                if (processedCommand === 'about') {
-                   term.writeln('Navigating to C:\\ABOUT...');
-                   navigate('/about'); 
-                   onClose?.();
-                 } else if (processedCommand === 'projects') {
-                   term.writeln('Navigating to C:\\PROJECTS...');
-                   navigate('/projects'); 
-                   onClose?.();
-                 } else if (processedCommand === 'exit') {
-                   term.writeln('Closing terminal interface...');
-                   onClose?.();
-                 } else if (processedCommand === 'help') {
-                    term.writeln('Available commands:');
-                    term.writeln('  help          - Displays this help message.');
-                    term.writeln('  about         - Navigates to the About section.');
-                    term.writeln('  projects      - Navigates to the Projects section.');
-                    term.writeln('  dir           - Lists files and directories.');
-                    term.writeln('  cd <dir>      - Changes current directory. Use "cd .." to go up.');
-                    term.writeln('  type <file>   - Displays the content of a file.');
-                    term.writeln('  clear         - Clears the terminal screen.');
-                    term.writeln('  exit          - Closes the terminal interface.');
-                 } else if (processedCommand === 'clear') {
-                    term.clear();
-                 } else if (processedCommand === 'dir') {
-                    const dirToList = getFileSystemEntry(currentPath, fileSystem);
-                    if (dirToList && dirToList.type === 'directory') {
-                        term.writeln(` Volume in drive C is WEYLAND_OS`);
-                        term.writeln(` Volume Serial Number is 1986-0426`);
-                        term.writeln(` Directory of ${currentPath.toUpperCase()}`);
-                        term.writeln('');
-                        let totalFiles = 0; let totalDirs = 0; let totalBytes = 0;
-                        const formatName = (name) => name.includes('.') ? name.split('.')[0].substring(0, 8).padEnd(8) + ' ' + name.split('.')[1].substring(0, 3).padEnd(3) : name.substring(0, 8).padEnd(8) + '   ';
-                        const padLeft = (str, len) => String(str).padStart(len, ' ');
-                        const childrenContainer = dirToList.children || dirToList;
-                        const keysToList = Object.keys(childrenContainer).filter(k => k !== 'type' && k !== 'date' && k !== 'time' && k !== 'children');
-                        if (currentPath.toUpperCase() !== 'C:\\') {
-                            term.writeln(`${formatName('.')}         <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
-                            term.writeln(`${formatName('..')}        <DIR>          ${dirToList.date || '01-01-80'}  ${dirToList.time || '12:00AM'}`);
-                            totalDirs += 2;
-                        }
-                        keysToList.forEach(name => {
-                            const item = childrenContainer[name];
-                            if (item.type === 'directory') { term.writeln(`${formatName(name.toUpperCase())}         <DIR>          ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalDirs++; }
-                            else if (item.type === 'file') { const size = item.size || 0; term.writeln(`${formatName(name.toUpperCase())}    ${padLeft(size.toLocaleString(), 10)} ${item.date || '01-01-80'}  ${item.time || '12:00AM'}`); totalFiles++; totalBytes += size; }
-                        });
-                        term.writeln('');
-                        term.writeln(` ${padLeft(totalFiles, 7)} file(s) ${padLeft(totalBytes.toLocaleString(), 12)} bytes`);
-                        term.writeln(` ${padLeft(totalDirs, 7)} dir(s)  ${padLeft((512 * 1024 * 1024).toLocaleString(), 12)} bytes free`);
-                    } else { term.writeln('Invalid path.'); }
-                 } else if (processedCommand === 'cd') {
-                    const targetDirRaw = args.join(' ').trim();
-                    if (!targetDirRaw) { term.writeln(currentPath.toUpperCase());
-                    } else {
-                        const targetDir = targetDirRaw.toUpperCase(); let potentialNewPath;
-                        if (targetDir === '..') { const parts = currentPath.toUpperCase().split('\\').filter(p=>p&&p!=='C:'); if(parts.length>0){parts.pop(); potentialNewPath='C:\\' + parts.join('\\'); if(parts.length>0){potentialNewPath+='\\';}else{potentialNewPath='C:\\';}}else{potentialNewPath='C:\\';}}
-                        else if (targetDir.startsWith('C:\\')) { potentialNewPath = targetDir; if(!potentialNewPath.endsWith('\\')&&potentialNewPath.toUpperCase()!=='C:'){potentialNewPath+='\\';} if(potentialNewPath.toUpperCase()==='C:'){potentialNewPath='C:\\';} }
-                        else { const basePath=currentPath.toUpperCase()==='C:\\'?currentPath:(currentPath.endsWith('\\')?currentPath:currentPath+'\\'); potentialNewPath=basePath+targetDir; if(!potentialNewPath.endsWith('\\')){potentialNewPath+='\\';} }
-                        if (potentialNewPath.toUpperCase()==='C:'){potentialNewPath='C:\\';}
-                        console.log(`[DosTerminal-onKey-CD] checking path: "${potentialNewPath}"`);
-                        const entry = getFileSystemEntry(potentialNewPath, fileSystem);
-                        if (entry && entry.type === 'directory') { currentPath = potentialNewPath.toUpperCase(); } 
-                        else { term.writeln('Invalid directory'); console.log(`[DosTerminal-onKey-CD] command failed check for path: "${potentialNewPath}". Entry found:`, entry); }
-                    }
-                 } else if (processedCommand === 'type') {
-                    const fileName = args.join(' ').trim().toUpperCase();
-                    if (!fileName) { term.writeln('Usage: TYPE <filename>');
-                    } else {
-                        const currentDirEntry = getFileSystemEntry(currentPath, fileSystem);
-                        let fileEntry = null; const childrenSource = currentDirEntry?.children || currentDirEntry;
-                        if (currentDirEntry && currentDirEntry.type === 'directory' && childrenSource) { fileEntry = childrenSource[fileName]; }
-                        if (fileEntry && fileEntry.type === 'file') { fileEntry.content.split('\n').forEach(line => term.writeln(line)); }
-                        else if (fileEntry && fileEntry.type === 'directory') { term.writeln(`Access denied - ${fileName} is a directory.`); }
-                        else { term.writeln(`File not found - ${fileName}`); }
-                    }
-                 } else if (processedCommand !== '') {
-                   term.writeln(`Bad command or file name: ${processedCommand}`);
-                 }
-                currentCommand = '';
-                console.log(`[DosTerminal-onKey-Enter] currentCommand reset. About to call updatePrompt.`);
-                if (processedCommand !== 'about' && processedCommand !== 'projects' && processedCommand !== 'exit') {
-                    updatePrompt(); 
+                term.writeln(''); // Newline after user presses Enter.
+                const commandToProcess = currentCommand;
+                currentCommand = ''; // Reset current command buffer.
+                
+                // Execute the user's command; `isAutoCmd = false`.
+                const newPath = executeCommand(commandToProcess, term, currentPath, false);
+                currentPath = newPath; // Update current path if 'cd' was successful.
+
+                // Only show a new prompt if the command didn't close/navigate away.
+                const [cmdName] = commandToProcess.trim().toLowerCase().split(/\s+/);
+                if (cmdName !== 'about' && cmdName !== 'projects' && cmdName !== 'exit') {
+                    updatePrompt();
                 }
               } else if (domEvent.key === 'Backspace') {
                 if (processingAutoCommand) return;
-                // ... (existing Backspace logic, using 'currentCommand')
-                if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) { domEvent.preventDefault(); term.write('\b \b'); currentCommand = currentCommand.slice(0, -1); }
-                else { domEvent.preventDefault(); }
-
+                // Handle Backspace: remove last character from command buffer and terminal.
+                if (currentPath && currentCommand.length > 0 && term.buffer.normal.cursorX > currentPath.length + 2) { // +2 for '> ' prompt
+                    domEvent.preventDefault(); 
+                    term.write('\b \b'); // Erase character on screen.
+                    currentCommand = currentCommand.slice(0, -1); // Update command buffer.
+                } else { 
+                    domEvent.preventDefault(); // Prevent other backspace behavior.
+                }
               }
             });
 
+            // Handle incoming data (typed characters).
             dataListenerRef.current = term.onData(data => {
               if (processingAutoCommand) return;
-              // ... (existing onData logic, using 'currentCommand' and filtering escape codes)
-              if (data.startsWith('\x1b')) { return; }
-              if (data === '\r' || data === '\n' || data === '\r\n') { return; }
-              if (data.charCodeAt(0) === 127 || data === '\b') { return; }
-              currentCommand += data;
-              term.write(data);
+              // Filter out escape sequences, Enter, Backspace (handled by onKey).
+              if (data.startsWith('\x1b')) { return; } 
+              if (data === '\r' || data === '\n' || data === '\r\n') { return; } 
+              if (data.charCodeAt(0) === 127 || data === '\b') { return; } 
+              currentCommand += data; // Append typed character to command buffer.
+              term.write(data); // Echo character to terminal.
             });
 
-            term.focus(); // ADDED: Ensure focus AFTER listeners are set and auto-commands are done
-            console.log("[DosTerminal-AutoCmdEnd] Listeners re-set, terminal explicitly focused."); // ADDED: Log
+            term.focus(); // Ensure terminal is focused after setup.
 
-            const updatePrompt = () => { // Ensure updatePrompt uses the correct 'currentPath'
+            // Helper to display the command prompt.
+            const updatePrompt = () => {
               const promptText = `\r\n${currentPath.toUpperCase()}> `;
-              // console.log(`[DosTerminal-UpdatePrompt] Attempting to write prompt: "${promptText.replace('\r\n','\\r\\n')}"`);
               term.write(promptText);
             };
 
           } catch (fitError) {
-            console.error("[DosTerminal-MainEffect] Error during initial fit/write/auto-commands:", fitError);
+            console.error("[DosTerminal] Error during initial fit/write/auto-commands:", fitError);
           }
-        }, 50);
+        }, 50); // Small delay (50ms) for Xterm to initialize before auto-commands.
 
       } catch (initError) {
-        console.error("[DosTerminal-MainEffect] Error during direct xterm initialization:", initError);
-        termInstanceRef.current = null;
+        console.error("[DosTerminal] Error during direct xterm initialization:", initError);
+        termInstanceRef.current = null; // Ensure ref is null if init failed.
       }
-    } else {
-        console.log("[DosTerminal-MainEffect] Skipping initialization (already initialized or divRef missing).");
     }
 
+    // --- Cleanup Function for useEffect ---
+    // This runs when the component unmounts or dependencies (navigate, onClose) change.
     return () => {
-      console.log("[DosTerminal-MainEffect-Cleanup] Running cleanup.");
-      if (autoCommandTimerId) { // Added: Clear the timeout if it was set
+      if (autoCommandTimerId) { // Clear any pending auto-command timeout.
         clearTimeout(autoCommandTimerId);
-        console.log("[DosTerminal-MainEffect-Cleanup] Cleared auto-command setTimeout.");
       }
+      // Dispose Xterm event listeners.
       keyListenerRef.current?.dispose(); keyListenerRef.current = null;
       dataListenerRef.current?.dispose(); dataListenerRef.current = null;
+      // Dispose the Xterm instance itself.
       if (termInstanceRef.current) {
-          console.log("[DosTerminal-MainEffect-Cleanup] Disposing terminal instance on component unmount.");
           termInstanceRef.current.dispose();
           termInstanceRef.current = null;
       }
     };
-  }, [navigate, onClose]); // End of main useEffect
+  }, [navigate, onClose]); // Dependencies: effect re-runs if these change.
 
-  // useEffect for focusing when shouldFocusOnOpen becomes true
-  useEffect(() => {
-    if (shouldFocusOnOpen && termInstanceRef.current) {
-      console.log("[DosTerminal-FocusEffect] Auto-focusing terminal due to shouldFocusOnOpen.");
-      termInstanceRef.current.focus();
-    }
-  }, [shouldFocusOnOpen]);
-
-  // --- Handler to focus terminal on click/tap ---
+  // --- Handler to focus terminal on click/tap on its content area ---
   const handleTerminalContentClick = () => {
-    if (termInstanceRef.current) {
-      termInstanceRef.current.focus();
-      console.log("[DosTerminal-ContentClick] Terminal focused on click.");
+    if (termInstanceRef.current) { // If terminal instance exists
+      termInstanceRef.current.focus(); // Focus it
     }
   };
 
-  // --- Determine window style based on state ---
   let windowStyle = {};
   let contentStyle = { height: 'calc(100% - 25px)', width: '100%' };
 
@@ -639,7 +625,7 @@ function DosTerminal(props) {
       width: `${initialSize.width}px`,
       height: `${initialSize.height}px`,
     };
-     contentStyle = { height: `calc(${initialSize.height}px - 25px)`, width: '100%' };
+     contentStyle = { height: `calc(${initialSize.height}px - 25px)`, width: '100%' }; // Adjust content height
   } else if (windowState === 'maximized') {
     windowStyle = {
       position: 'fixed',
@@ -647,21 +633,22 @@ function DosTerminal(props) {
       top: '0px',
       width: '100vw',
       height: '100vh',
-      zIndex: 1001,
+      zIndex: 1001, // Ensure it's above other content when maximized
     };
-     contentStyle = { height: 'calc(100vh - 25px)', width: '100%' };
+     contentStyle = { height: 'calc(100vh - 25px)', width: '100%' }; // Adjust content height
   } else if (windowState === 'minimized') {
     windowStyle = {
-      position: 'fixed',
+      position: 'fixed', // Keep it fixed for minimized state
       left: hasBeenDragged ? `${positionBeforeMinimize.x}px` : 'auto',
       top: hasBeenDragged ? `${positionBeforeMinimize.y}px` : 'auto',
       right: !hasBeenDragged ? '20px' : 'auto',
-      bottom: !hasBeenDragged ? '20px' : 'auto',
-      width: hasBeenDragged ? `${sizeBeforeMinimize.width * 0.3}px` : '200px',
-      height: '25px',
-      overflow: 'hidden',
+      bottom: !hasBeenDragged ? '20px' : 'auto', // Default position if not dragged
+      width: hasBeenDragged ? `${sizeBeforeMinimize.width * 0.3}px` : '200px', // Smaller width when minimized
+      height: '25px', // Title bar height
+      overflow: 'hidden', // Hide content when minimized
       zIndex: 1000,
     };
+    // No contentStyle adjustment needed for minimized as content is hidden or irrelevant
   }
 
   return (
