@@ -44,8 +44,7 @@ function ProjectsPage() {
   const introComplete = typedIntro1 === intro1Text && typedIntro2 === intro2Text;
 
   return (
-    <section id="projects" className="tui-window" style={{ marginTop: '20px' }}>
-       <h2 className="tui-title">C:\ARCHIVES\PROJECTS_OLD</h2>
+        <section id="projects" className="tui-window" style={{ marginTop: '20px' }}>       <h2 className="tui-title">📁 C:\ARCHIVES\PROJECTS_OLD</h2>
        <div className="tui-panel" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
          <p>{typedIntro1}{typedIntro1 !== intro1Text ? '_' : ''}</p>
          <p>{typedIntro2}{typedIntro2 !== intro2Text ? '_' : ''}</p>

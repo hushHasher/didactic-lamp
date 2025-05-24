@@ -24,7 +24,7 @@ function AboutPage() {
 
   return (
     <section id="about" className="tui-window" style={{ marginTop: '20px' }}>
-       <h2 className="tui-title">C:\WILLOW_ARCHIVE\CONVERGENCE_EVENT_8X9X.LOG</h2>
+       <h2 className="tui-title">📋 C:\WILLOW_ARCHIVE\CONVERGENCE_EVENT_8X9X.LOG</h2>
        <div 
          className="tui-panel" 
          style={{ 

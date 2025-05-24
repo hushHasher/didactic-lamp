@@ -1,0 +1,359 @@
+/* Window Component CSS */
+.window {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  border: 2px outset #c0c0c0;
+  background-color: #c0c0c0;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  box-shadow: 
+    2px 2px 4px rgba(0, 0, 0, 0.3),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.8);
+  min-width: 200px;
+  min-height: 100px;
+  user-select: none;
+}
+
+.window.minimized {
+  visibility: hidden !important;
+}
+
+.window.maximized {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Title Bar */
+.window-title-bar {
+  background: linear-gradient(90deg, #0000ff 0%, #000080 100%);
+  color: white;
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 20px;
+  border-bottom: 1px solid #808080;
+  cursor: move;
+  user-select: none;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.window-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.window-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Window Controls */
+.window-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.window-control-btn {
+  width: 16px;
+  height: 14px;
+  border: 1px outset #c0c0c0;
+  background-color: #c0c0c0;
+  color: black;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+}
+
+.window-control-btn:hover {
+  background-color: #d4d0c8;
+}
+
+.window-control-btn:active {
+  border: 1px inset #c0c0c0;
+  background-color: #a0a0a0;
+}
+
+.close-btn {
+  background-color: #ff4444;
+  color: white;
+}
+
+.close-btn:hover {
+  background-color: #ff6666;
+}
+
+.close-btn:active {
+  background-color: #cc3333;
+}
+
+/* Window Content */
+.window-content {
+  flex: 1;
+  background-color: #c0c0c0;
+  padding: 4px;
+  overflow: auto;
+  position: relative;
+}
+
+/* Resize Handles */
+.resize-handle {
+  position: absolute;
+  background: transparent;
+}
+
+.resize-handle:hover {
+  background-color: rgba(0, 0, 255, 0.2);
+}
+
+/* Top/Bottom resize handles */
+.resize-n,
+.resize-s {
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: ns-resize;
+}
+
+.resize-n {
+  top: -2px;
+}
+
+.resize-s {
+  bottom: -2px;
+}
+
+/* Left/Right resize handles */
+.resize-e,
+.resize-w {
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: ew-resize;
+}
+
+.resize-e {
+  right: -2px;
+}
+
+.resize-w {
+  left: -2px;
+}
+
+/* Corner resize handles */
+.resize-ne,
+.resize-nw,
+.resize-se,
+.resize-sw {
+  width: 8px;
+  height: 8px;
+}
+
+.resize-ne {
+  top: -2px;
+  right: -2px;
+  cursor: nesw-resize;
+}
+
+.resize-nw {
+  top: -2px;
+  left: -2px;
+  cursor: nwse-resize;
+}
+
+.resize-se {
+  bottom: -2px;
+  right: -2px;
+  cursor: nwse-resize;
+}
+
+.resize-sw {
+  bottom: -2px;
+  left: -2px;
+  cursor: nesw-resize;
+}
+
+/* Custom scrollbar for window content */
+.window-content::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+.window-content::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border: 1px inset #c0c0c0;
+}
+
+.window-content::-webkit-scrollbar-thumb {
+  background: #808080;
+  border: 1px outset #c0c0c0;
+}
+
+.window-content::-webkit-scrollbar-thumb:hover {
+  background: #606060;
+}
+
+.window-content::-webkit-scrollbar-corner {
+  background: #c0c0c0;
+}
+
+/* Window content types - Terminal */
+.window-content.terminal {
+  background-color: #000080;
+  color: #ffffff;
+  padding: 8px;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+}
+
+.window-content.terminal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Window content types - File Manager */
+.window-content.file-manager {
+  background-color: white;
+  padding: 2px;
+}
+
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  gap: 4px;
+}
+
+.file-item:hover {
+  background-color: #0000ff;
+  color: white;
+}
+
+.file-item.selected {
+  background-color: #0000ff;
+  color: white;
+  border: 1px dotted #ffffff;
+}
+
+.file-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Window content types - Text Editor */
+.window-content.text-editor {
+  background-color: white;
+  padding: 0;
+}
+
+.text-editor-content {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 4px;
+  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  font-size: 12px;
+  resize: none;
+  outline: none;
+}
+
+/* Animations */
+.window {
+  animation: windowOpen 0.2s ease-out;
+}
+
+@keyframes windowOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Focus state */
+.window.focused {
+  z-index: 9999 !important;
+}
+
+.window.focused .window-title-bar {
+  background: linear-gradient(90deg, #0000ff 0%, #000080 100%);
+}
+
+.window:not(.focused) .window-title-bar {
+  background: linear-gradient(90deg, #808080 0%, #606060 100%);
+  color: #c0c0c0;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .window {
+    min-width: 280px !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+  }
+  
+  .window-title-bar {
+    height: 24px;
+    font-size: 12px;
+  }
+  
+  .window-control-btn {
+    width: 20px;
+    height: 18px;
+    font-size: 12px;
+  }
+  
+  .resize-handle {
+    width: 8px !important;
+    height: 8px !important;
+  }
+  
+  .resize-n,
+  .resize-s {
+    height: 8px;
+  }
+  
+  .resize-e,
+  .resize-w {
+    width: 8px;
+  }
+} 

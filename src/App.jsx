@@ -1,7 +1,8 @@
-// src/App.jsx - Padding adjustments
+// src/App.jsx - Enhanced with Desktop Environment
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Link } from 'react-router-dom'; // Import Router components
 import DosTerminal from './DosTerminal';
+import Desktop from './components/Desktop'; // Import Desktop component
 import HomePage from './pages/HomePage'; // Import page components
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -68,92 +69,95 @@ function App() {
   }
 
   return (
-    <div className="App"> {/* Main layout container */}
+    <Desktop>
+      <div className="App"> {/* Main layout container */}
 
-      {/* --- Navigation Bar --- */}
-      <nav className="tui-panel main-nav" style={{ padding: '5px 10px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          {/* Left side: Logo + Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <img
-              src="logo_rim.png"
-              alt="Weyland Corp Logo"
-              className="navbar-logo"
-            />
-            {/* Use stable closeMobileMenu */}
-            <Link to="/" className="tui-title" style={{fontSize: '1.1em', textDecoration: 'none', color: 'inherit'}} onClick={closeMobileMenu}>
-             WEYLAND CORP
-            </Link>
+        {/* --- Navigation Bar --- */}
+        <nav className="tui-panel main-nav enhanced-nav" style={{ padding: '8px 15px', flexShrink: 0, position: 'relative', zIndex: 1001 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            {/* Left side: Logo + Title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              <img
+                src="logo_rim.png"
+                alt="Weyland Corp Logo"
+                className="navbar-logo enhanced-logo"
+              />
+              {/* Use stable closeMobileMenu */}
+              <Link to="/" className="tui-title enhanced-title" style={{fontSize: '1.2em', textDecoration: 'none', color: 'inherit', textShadow: '1px 1px 2px rgba(0,0,0,0.5)'}} onClick={closeMobileMenu}>
+               WEYLAND CORP
+              </Link>
+            </div>
+
+            {/* System Status Indicator */}
+            <div className="system-status" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8em', color: '#00ff00' }}>
+              <span>●</span>
+              <span>SYSTEM ONLINE</span>
+            </div>
+
+            {/* Hamburger Button (Mobile Only - controlled by CSS) */}
+            {/* Use stable toggleMobileMenu */}
+            <button className="tui-button mobile-menu-button enhanced-mobile-btn" onClick={toggleMobileMenu} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
+              ☰
+            </button>
+
+            {/* Right side links (Desktop Only - controlled by CSS) */}
+            <ul className="desktop-nav-links enhanced-nav-links" style={{ listStyle: 'none', margin: 0, padding: 0, gap: '12px' }}>
+              <li><Link to="/" className="tui-button enhanced-nav-btn">🏠 Home</Link></li>
+              <li><Link to="/about" className="tui-button enhanced-nav-btn">📋 About</Link></li>
+              <li><Link to="/projects" className="tui-button enhanced-nav-btn">📁 Projects</Link></li>
+              <li>
+                {/* Use stable toggleTerminal */}
+                <button className="tui-button enhanced-nav-btn terminal-btn" onClick={toggleTerminal} aria-pressed={showTerminal}>
+                  {showTerminal ? '💻 CLI [ON]' : '💻 CLI [OFF]'}
+                </button>
+              </li>
+            </ul>
           </div>
 
-          {/* Hamburger Button (Mobile Only - controlled by CSS) */}
-          {/* Use stable toggleMobileMenu */}
-          <button className="tui-button mobile-menu-button" onClick={toggleMobileMenu} aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
-            ☰
-          </button>
-
-          {/* Right side links (Desktop Only - controlled by CSS) */}
-          <ul className="desktop-nav-links" style={{ listStyle: 'none', margin: 0, padding: 0, gap: '10px' }}>
-            <li><Link to="/" className="tui-button">Home</Link></li>
-            <li><Link to="/about" className="tui-button">About</Link></li>
-            <li><Link to="/projects" className="tui-button">Projects</Link></li>
-            {/* <li><Link to="/contact" className="tui-button">Contact</Link></li> */}
-            <li>
-              {/* Use stable toggleTerminal */}
-              <button className="tui-button" onClick={toggleTerminal} aria-pressed={showTerminal}>
-                {showTerminal ? 'CLI [X]' : 'CLI [_]'}
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        <div className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-          <ul style={{ listStyle: 'none', margin: '10px 0 0 0', padding: 0 }}>
-            <li><Link to="/" className="tui-button mobile-link" onClick={closeMobileMenu}>Home</Link></li>
-            <li><Link to="/about" className="tui-button mobile-link" onClick={closeMobileMenu}>About</Link></li>
-            <li><Link to="/projects" className="tui-button mobile-link" onClick={closeMobileMenu}>Projects</Link></li>
-            {/* <li><Link to="/contact" className="tui-button mobile-link" onClick={closeMobileMenu}>Contact</Link></li> */}
-            <li>
-              {/* Use stable toggleTerminalAndMenu */}
-              <button className="tui-button mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
-                {showTerminal ? 'Close CLI' : 'Launch CLI'}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      {/* --- End Navigation Bar --- */}
+          {/* Mobile Menu Dropdown */}
+          <div className={`mobile-menu enhanced-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+            <ul style={{ listStyle: 'none', margin: '15px 0 0 0', padding: 0 }}>
+              <li><Link to="/" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>🏠 Home</Link></li>
+              <li><Link to="/about" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>📋 About</Link></li>
+              <li><Link to="/projects" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>📁 Projects</Link></li>
+              <li>
+                {/* Use stable toggleTerminalAndMenu */}
+                <button className="tui-button mobile-link enhanced-mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
+                  {showTerminal ? '💻 Close CLI' : '💻 Launch CLI'}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        {/* --- End Navigation Bar --- */}
 
 
-      {/* --- Main Content Area (Where Pages Render) --- */}
-      {/* MODIFIED: Removed inline style for padding */}
-      <main>
-        {/* --- Define Page Routes --- */}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          {/* <Route path="/contact" element={<ContactPage />} /> */}
-          {/* <Route path="*" element={<div>404 - Page Not Found</div>} /> */}
-          <Route path="*" element={<NotFoundPage />} /> {/* ADDED: Catch-all route for 404 */}
-        </Routes>
-        {/* --- End Page Routes --- */}
-      </main>
-      {/* --- End Main Content Area --- */}
+        {/* --- Main Content Area (Where Pages Render) --- */}
+        <main className="enhanced-main">
+          {/* --- Define Page Routes --- */}
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          {/* --- End Page Routes --- */}
+        </main>
+        {/* --- End Main Content Area --- */}
 
-      {/* --- Footer --- */}
-      <FooterClock />
-      {/* --- End Footer --- */}
+        {/* --- Enhanced Footer --- */}
+        <FooterClock />
+        {/* --- End Footer --- */}
 
-      {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
-      {showTerminal && (
-        <div className="terminal-container">
-          <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
-        </div>
-      )}
+        {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
+        {showTerminal && (
+          <div className="terminal-container">
+            <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
+          </div>
+        )}
 
-    </div> // Closes <div className="App">
+      </div> {/* Closes <div className="App"> */}
+    </Desktop>
   );
 }
 
