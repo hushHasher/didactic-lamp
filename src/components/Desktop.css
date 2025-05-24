@@ -5,11 +5,32 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(45deg, #008080 0%, #004040 100%);
+  /* Authentic Windows 3.1 "Weave" pattern */
+  background: #c0c0c0;
   background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 2px, transparent 2px),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 50px 50px, 25px 25px;
+    repeating-linear-gradient(
+      45deg,
+      #c0c0c0 0px,
+      #c0c0c0 2px,
+      #808080 2px,
+      #808080 4px,
+      #c0c0c0 4px,
+      #c0c0c0 6px,
+      #ffffff 6px,
+      #ffffff 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      #c0c0c0 0px,
+      #c0c0c0 2px,
+      #808080 2px,
+      #808080 4px,
+      #c0c0c0 4px,
+      #c0c0c0 6px,
+      #ffffff 6px,
+      #ffffff 8px
+    );
+  background-size: 16px 16px;
   z-index: 0;
   overflow: hidden;
 }
@@ -22,13 +43,21 @@
   left: 0;
   width: 100%;
   height: 100%;
+  /* Add subtle dithering effect typical of 16-color Windows 3.1 */
   background-image: 
     repeating-linear-gradient(
-      45deg,
+      0deg,
       transparent 0px,
-      transparent 2px,
-      rgba(255, 255, 255, 0.02) 2px,
-      rgba(255, 255, 255, 0.02) 4px
+      transparent 1px,
+      rgba(0, 0, 0, 0.03) 1px,
+      rgba(0, 0, 0, 0.03) 2px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 1px,
+      rgba(0, 0, 0, 0.03) 1px,
+      rgba(0, 0, 0, 0.03) 2px
     );
   pointer-events: none;
 }

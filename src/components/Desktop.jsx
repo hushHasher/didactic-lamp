@@ -3,6 +3,11 @@ import WindowManager from './WindowManager';
 import DosTerminal from '../DosTerminal';
 import {
   MSDOSIcon,
+  NortonCommanderIcon,
+  WinRARIcon,
+  SystemToolsIcon,
+  DefragIcon,
+  CharMapIcon,
   FileManagerIcon,
   MyComputerIcon,
   ProgramManagerIcon,
@@ -40,32 +45,32 @@ function Desktop() {
       action: () => openTerminal(),
     },
     {
+      id: 'nortoncommander',
+      name: 'Norton Commander',
+      icon: <NortonCommanderIcon size={32} />,
+      position: { x: 20, y: 180 },
+      action: () => openNortonCommanderWindow(),
+    },
+    {
       id: 'filemanager',
       name: 'File Manager',
       icon: <FileManagerIcon size={32} />,
-      position: { x: 20, y: 180 },
+      position: { x: 20, y: 260 },
       action: () => openFileManager(),
     },
     {
       id: 'programmanager',
       name: 'Program Manager',
       icon: <ProgramManagerIcon size={32} />,
-      position: { x: 20, y: 260 },
+      position: { x: 20, y: 340 },
       action: () => openProgramManager(),
     },
     {
-      id: 'projects',
-      name: 'Projects',
-      icon: <ApplicationIcon size={32} color="#8080ff">📁</ApplicationIcon>,
-      position: { x: 20, y: 340 },
-      action: () => openProjectsWindow(),
-    },
-    {
-      id: 'about',
-      name: 'About',
-      icon: <ApplicationIcon size={32} color="#008080">ℹ</ApplicationIcon>,
+      id: 'winrar',
+      name: 'WinRAR',
+      icon: <WinRARIcon size={32} />,
       position: { x: 20, y: 420 },
-      action: () => openAboutWindow(),
+      action: () => openWinRARWindow(),
     },
     {
       id: 'notepad',
@@ -89,46 +94,81 @@ function Desktop() {
       action: () => openPaintWindow(),
     },
     {
+      id: 'charmap',
+      name: 'Character Map',
+      icon: <CharMapIcon size={32} />,
+      position: { x: 120, y: 260 },
+      action: () => openCharMapWindow(),
+    },
+    {
       id: 'solitaire',
       name: 'Solitaire',
       icon: <SolitaireIcon size={32} />,
-      position: { x: 120, y: 260 },
+      position: { x: 120, y: 340 },
       action: () => openSolitaireWindow(),
     },
     {
       id: 'soundrecorder',
       name: 'Sound Recorder',
       icon: <SoundRecorderIcon size={32} />,
-      position: { x: 120, y: 340 },
+      position: { x: 120, y: 420 },
       action: () => openSoundRecorderWindow(),
+    },
+    {
+      id: 'systemtools',
+      name: 'System Tools',
+      icon: <SystemToolsIcon size={32} />,
+      position: { x: 220, y: 20 },
+      action: () => openSystemToolsWindow(),
+    },
+    {
+      id: 'defrag',
+      name: 'Defragmenter',
+      icon: <DefragIcon size={32} />,
+      position: { x: 220, y: 100 },
+      action: () => openDefragWindow(),
     },
     {
       id: 'mediaplayer',
       name: 'Media Player',
       icon: <MediaPlayerIcon size={32} />,
-      position: { x: 120, y: 420 },
+      position: { x: 220, y: 180 },
       action: () => openMediaPlayerWindow(),
     },
     {
       id: 'controlpanel',
       name: 'Control Panel',
       icon: <ControlPanelIcon size={32} />,
-      position: { x: 220, y: 20 },
+      position: { x: 220, y: 260 },
       action: () => openControlPanelWindow(),
     },
     {
       id: 'network',
       name: 'Network',
       icon: <NetworkIcon size={32} />,
-      position: { x: 220, y: 100 },
+      position: { x: 220, y: 340 },
       action: () => openNetworkWindow(),
     },
     {
       id: 'recyclebin',
       name: 'Recycle Bin',
       icon: <RecycleBinIcon size={32} isEmpty={true} />,
-      position: { x: 220, y: 180 },
+      position: { x: 220, y: 420 },
       action: () => openRecycleBinWindow(),
+    },
+    {
+      id: 'projects',
+      name: 'Projects',
+      icon: <ApplicationIcon size={32} color="#8080ff">📁</ApplicationIcon>,
+      position: { x: 320, y: 20 },
+      action: () => openProjectsWindow(),
+    },
+    {
+      id: 'about',
+      name: 'About',
+      icon: <ApplicationIcon size={32} color="#008080">ℹ</ApplicationIcon>,
+      position: { x: 320, y: 100 },
+      action: () => openAboutWindow(),
     },
   ];
 
@@ -781,6 +821,410 @@ function Desktop() {
             </div>
             <div style={{ marginTop: '12px', fontSize: '12px', color: '#606060' }}>
               0 object(s) | 0 bytes
+            </div>
+          </div>
+        </div>
+      )
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId]);
+
+  const openNortonCommanderWindow = useCallback(() => {
+    const id = generateWindowId();
+    const leftFiles = [
+      { name: 'AUTOEXEC.BAT', size: '128', type: 'file' },
+      { name: 'CONFIG.SYS', size: '96', type: 'file' },
+      { name: 'DOS', size: '<DIR>', type: 'dir' },
+      { name: 'WINDOWS', size: '<DIR>', type: 'dir' },
+      { name: 'PROJECTS', size: '<DIR>', type: 'dir' },
+    ];
+    const rightFiles = [
+      { name: 'COMMAND.COM', size: '54649', type: 'file' },
+      { name: 'MOUSE.COM', size: '15230', type: 'file' },
+      { name: 'WELCOME.TXT', size: '150', type: 'file' },
+      { name: 'README.MD', size: '80', type: 'file' },
+    ];
+
+    const newWindow = {
+      id,
+      title: 'Norton Commander',
+      icon: <NortonCommanderIcon size={16} />,
+      position: { x: 80 + windows.length * 30, y: 80 + windows.length * 30 },
+      size: { width: 640, height: 480 },
+      minSize: { width: 500, height: 350 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: (
+        <div className="window-content">
+          <div style={{ padding: '4px', height: '100%', fontFamily: 'monospace', fontSize: '12px' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', backgroundColor: '#000080', color: '#ffffff', padding: '2px 4px', marginBottom: '4px' }}>
+              <div style={{ flex: 1, textAlign: 'center' }}>Left   C:\</div>
+              <div style={{ flex: 1, textAlign: 'center' }}>Right  C:\</div>
+            </div>
+            
+            {/* File panels */}
+            <div style={{ display: 'flex', height: 'calc(100% - 80px)' }}>
+              {/* Left panel */}
+              <div style={{ flex: 1, marginRight: '2px', border: '1px solid #000000', backgroundColor: '#ffff00' }}>
+                <div style={{ backgroundColor: '#000080', color: '#ffffff', padding: '2px 4px', textAlign: 'center' }}>
+                  C:\
+                </div>
+                <div style={{ padding: '2px', height: 'calc(100% - 24px)', overflow: 'auto' }}>
+                  {leftFiles.map((file, index) => (
+                    <div key={index} style={{ 
+                      padding: '1px 2px', 
+                      cursor: 'pointer',
+                      backgroundColor: index === 0 ? '#0000ff' : 'transparent',
+                      color: index === 0 ? '#ffffff' : '#000000'
+                    }}>
+                      {file.name.padEnd(12)} {file.size.padStart(8)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Right panel */}
+              <div style={{ flex: 1, marginLeft: '2px', border: '1px solid #000000', backgroundColor: '#ffff00' }}>
+                <div style={{ backgroundColor: '#008080', color: '#ffffff', padding: '2px 4px', textAlign: 'center' }}>
+                  C:\
+                </div>
+                <div style={{ padding: '2px', height: 'calc(100% - 24px)', overflow: 'auto' }}>
+                  {rightFiles.map((file, index) => (
+                    <div key={index} style={{ 
+                      padding: '1px 2px', 
+                      cursor: 'pointer',
+                      backgroundColor: 'transparent',
+                      color: '#000000'
+                    }}>
+                      {file.name.padEnd(12)} {file.size.padStart(8)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Function keys bar */}
+            <div style={{ display: 'flex', marginTop: '4px', backgroundColor: '#008080', color: '#ffffff' }}>
+              {['F1Help', 'F2Menu', 'F3View', 'F4Edit', 'F5Copy', 'F6Move', 'F7MkDir', 'F8Delete', 'F9PullDn', 'F10Quit'].map((key, index) => (
+                <div key={index} style={{ 
+                  flex: 1, 
+                  padding: '2px', 
+                  textAlign: 'center', 
+                  borderRight: index < 9 ? '1px solid #ffffff' : 'none',
+                  fontSize: '10px',
+                  cursor: 'pointer'
+                }}>
+                  {key}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId]);
+
+  const openWinRARWindow = useCallback(() => {
+    const id = generateWindowId();
+    const archives = [
+      { name: 'BACKUP.RAR', size: '2.1 MB', date: '12-15-95', ratio: '87%' },
+      { name: 'PROJECTS.ZIP', size: '4.3 MB', date: '11-20-95', ratio: '92%' },
+      { name: 'SYSTEM.ARJ', size: '1.8 MB', date: '10-05-95', ratio: '89%' },
+    ];
+
+    const newWindow = {
+      id,
+      title: 'WinRAR',
+      icon: <WinRARIcon size={16} />,
+      position: { x: 150 + windows.length * 30, y: 120 + windows.length * 30 },
+      size: { width: 500, height: 400 },
+      minSize: { width: 400, height: 300 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: (
+        <div className="window-content">
+          <div style={{ padding: '8px' }}>
+            {/* Toolbar */}
+            <div style={{ marginBottom: '8px', display: 'flex', gap: '4px' }}>
+              {['📁', '📂', '📄', '➕', '✂️', '📋', '🔍'].map((icon, index) => (
+                <button key={index} style={{
+                  padding: '4px 8px',
+                  border: '2px outset #c0c0c0',
+                  backgroundColor: '#c0c0c0',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}>
+                  {icon}
+                </button>
+              ))}
+            </div>
+            
+            <h3 style={{ margin: '0 0 12px 0', color: '#000080' }}>Archive Manager</h3>
+            
+            {/* Archive list */}
+            <div style={{ backgroundColor: 'white', border: '2px inset #c0c0c0', padding: '4px', minHeight: '200px' }}>
+              <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#c0c0c0' }}>
+                    <th style={{ textAlign: 'left', padding: '4px', borderRight: '1px solid #808080' }}>Archive</th>
+                    <th style={{ textAlign: 'left', padding: '4px', borderRight: '1px solid #808080' }}>Size</th>
+                    <th style={{ textAlign: 'left', padding: '4px', borderRight: '1px solid #808080' }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '4px' }}>Ratio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archives.map((archive, index) => (
+                    <tr key={index} style={{ cursor: 'pointer' }}>
+                      <td style={{ padding: '2px 4px', borderRight: '1px solid #e0e0e0' }}>
+                        <span style={{ marginRight: '4px' }}>📦</span>
+                        {archive.name}
+                      </td>
+                      <td style={{ padding: '2px 4px', borderRight: '1px solid #e0e0e0' }}>{archive.size}</td>
+                      <td style={{ padding: '2px 4px', borderRight: '1px solid #e0e0e0' }}>{archive.date}</td>
+                      <td style={{ padding: '2px 4px' }}>{archive.ratio}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {archives.length === 0 && (
+                <div style={{ textAlign: 'center', color: '#606060', padding: '40px' }}>
+                  No archives found
+                </div>
+              )}
+            </div>
+            
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#606060' }}>
+              {archives.length} archive(s) | Total: 8.2 MB
+            </div>
+          </div>
+        </div>
+      )
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId]);
+
+  const openSystemToolsWindow = useCallback(() => {
+    const id = generateWindowId();
+    const systemTools = [
+      { name: 'Disk Defragmenter', icon: '🔧', desc: 'Optimize disk performance' },
+      { name: 'ScanDisk', icon: '🔍', desc: 'Check disk for errors' },
+      { name: 'System Monitor', icon: '📊', desc: 'Monitor system resources' },
+      { name: 'Memory Manager', icon: '🧠', desc: 'Optimize memory usage' },
+      { name: 'Registry Editor', icon: '📝', desc: 'Edit system registry' },
+      { name: 'Device Manager', icon: '🔌', desc: 'Manage hardware devices' },
+    ];
+
+    const newWindow = {
+      id,
+      title: 'System Tools',
+      icon: <SystemToolsIcon size={16} />,
+      position: { x: 180 + windows.length * 30, y: 100 + windows.length * 30 },
+      size: { width: 450, height: 400 },
+      minSize: { width: 350, height: 300 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: (
+        <div className="window-content">
+          <div style={{ padding: '16px' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: '#000080' }}>System Tools</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+              {systemTools.map((tool, index) => (
+                <div key={index} style={{
+                  border: '2px outset #c0c0c0',
+                  padding: '12px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: '#c0c0c0',
+                  ':hover': { backgroundColor: '#e0e0e0' }
+                }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>{tool.icon}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>{tool.name}</div>
+                  <div style={{ fontSize: '10px', color: '#606060' }}>{tool.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId]);
+
+  const openDefragWindow = useCallback(() => {
+    const id = generateWindowId();
+    const newWindow = {
+      id,
+      title: 'Disk Defragmenter',
+      icon: <DefragIcon size={16} />,
+      position: { x: 200 + windows.length * 30, y: 140 + windows.length * 30 },
+      size: { width: 500, height: 350 },
+      minSize: { width: 400, height: 250 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: (
+        <div className="window-content">
+          <div style={{ padding: '16px' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: '#000080' }}>Disk Defragmenter</h3>
+            
+            {/* Drive selection */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontWeight: 'bold', marginRight: '8px' }}>Drive:</label>
+              <select style={{ padding: '2px', border: '1px inset #c0c0c0' }}>
+                <option>C: [WEYLAND_OS]</option>
+                <option>D: [CD-ROM]</option>
+              </select>
+            </div>
+            
+            {/* Fragmentation map */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>Disk Map:</div>
+              <div style={{ 
+                border: '2px inset #c0c0c0', 
+                padding: '8px', 
+                backgroundColor: 'white',
+                height: '100px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(20, 1fr)',
+                gap: '1px'
+              }}>
+                {Array.from({length: 400}, (_, i) => (
+                  <div key={i} style={{
+                    width: '3px',
+                    height: '3px',
+                    backgroundColor: i % 7 === 0 ? '#ff0000' : i % 5 === 0 ? '#ffff00' : '#00ff00'
+                  }} />
+                ))}
+              </div>
+            </div>
+            
+            {/* Legend */}
+            <div style={{ marginBottom: '16px', fontSize: '12px' }}>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div><span style={{ color: '#00ff00' }}>█</span> Used clusters</div>
+                <div><span style={{ color: '#ffff00' }}>█</span> Free space</div>
+                <div><span style={{ color: '#ff0000' }}>█</span> Fragmented files</div>
+              </div>
+            </div>
+            
+            {/* Statistics */}
+            <div style={{ backgroundColor: '#f0f0f0', border: '1px inset #c0c0c0', padding: '8px', fontSize: '12px' }}>
+              <div>Disk capacity: 2.1 GB</div>
+              <div>Free space: 1.2 GB (57%)</div>
+              <div>Fragmentation level: 23%</div>
+            </div>
+            
+            {/* Buttons */}
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <button style={{
+                padding: '6px 16px',
+                margin: '0 4px',
+                border: '2px outset #c0c0c0',
+                backgroundColor: '#c0c0c0',
+                cursor: 'pointer'
+              }}>
+                Analyze
+              </button>
+              <button style={{
+                padding: '6px 16px',
+                margin: '0 4px',
+                border: '2px outset #c0c0c0',
+                backgroundColor: '#c0c0c0',
+                cursor: 'pointer'
+              }}>
+                Defragment
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    };
+    setWindows(prev => [...prev, newWindow]);
+  }, [windows.length, generateWindowId]);
+
+  const openCharMapWindow = useCallback(() => {
+    const id = generateWindowId();
+    const characters = Array.from({length: 256}, (_, i) => String.fromCharCode(i));
+    
+    const newWindow = {
+      id,
+      title: 'Character Map',
+      icon: <CharMapIcon size={16} />,
+      position: { x: 160 + windows.length * 30, y: 120 + windows.length * 30 },
+      size: { width: 450, height: 400 },
+      minSize: { width: 350, height: 300 },
+      resizable: true,
+      zIndex: 1000 + windows.length,
+      content: (
+        <div className="window-content">
+          <div style={{ padding: '8px' }}>
+            <h3 style={{ margin: '0 0 12px 0', color: '#000080' }}>Character Map</h3>
+            
+            {/* Font selection */}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontWeight: 'bold', marginRight: '8px' }}>Font:</label>
+              <select style={{ padding: '2px', border: '1px inset #c0c0c0', marginRight: '16px' }}>
+                <option>Arial</option>
+                <option>Times New Roman</option>
+                <option>Courier New</option>
+                <option>Symbol</option>
+                <option>Wingdings</option>
+              </select>
+            </div>
+            
+            {/* Character grid */}
+            <div style={{ 
+              border: '2px inset #c0c0c0', 
+              backgroundColor: 'white', 
+              padding: '4px',
+              height: '200px',
+              overflow: 'auto'
+            }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(16, 1fr)', 
+                gap: '1px'
+              }}>
+                {characters.slice(32, 256).map((char, index) => (
+                  <div key={index + 32} style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '1px solid #e0e0e0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    backgroundColor: 'white'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#0000ff'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
+                  >
+                    {char}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Selected character info */}
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontWeight: 'bold' }}>Characters to copy:</div>
+              <input type="text" style={{ 
+                flex: 1, 
+                padding: '4px', 
+                border: '2px inset #c0c0c0',
+                fontFamily: 'monospace'
+              }} />
+              <button style={{
+                padding: '4px 12px',
+                border: '2px outset #c0c0c0',
+                backgroundColor: '#c0c0c0',
+                cursor: 'pointer'
+              }}>
+                Copy
+              </button>
             </div>
           </div>
         </div>
