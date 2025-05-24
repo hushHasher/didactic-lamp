@@ -1,5 +1,5 @@
 // src/DosTerminal.jsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
@@ -104,7 +104,7 @@ function getFileSystemEntry(path, fs) {
     }
 
     // Check if the part exists as a key in the correct source
-    if (childrenSource.hasOwnProperty(partName)) { // Use hasOwnProperty for safety
+    if (Object.prototype.hasOwnProperty.call(childrenSource, partName)) { // Use safe hasOwnProperty check
       currentLevel = childrenSource[partName];
       console.log(`[GFS]   Found part "${partName}". New level type: ${currentLevel?.type}`);
 
@@ -215,18 +215,18 @@ function DosTerminal(props) {
     e.preventDefault();
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
 
     let newX = e.clientX - dragStartOffset.x;
     let newY = e.clientY - dragStartOffset.y;
 
     setPosition({ x: newX, y: newY });
-  };
+  }, [isDragging, dragStartOffset.x, dragStartOffset.y]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -462,7 +462,7 @@ function DosTerminal(props) {
 
             keyListenerRef.current = term.onKey(e => {
               if (processingAutoCommand) return; // Ignore user input during auto commands
-              const { key, domEvent } = e;
+              const { domEvent } = e;
               if (domEvent.key === 'Enter') {
                 // ... (existing Enter logic, ensuring it uses 'currentPath' and updates 'currentCommand')
                 console.log(`[DosTerminal-onKey-Enter] Current command: '${currentCommand}'`);
@@ -607,7 +607,7 @@ function DosTerminal(props) {
           termInstanceRef.current = null;
       }
     };
-  }, [navigate]); // End of main useEffect
+  }, [navigate, onClose]); // End of main useEffect
 
   // useEffect for focusing when shouldFocusOnOpen becomes true
   useEffect(() => {
