@@ -14,6 +14,9 @@ import './App.css'; // Main layout styles
 function App() {
   // ADDED: State for boot sequence
   const [booting, setBooting] = useState(false);
+  
+  // ADDED: State for desktop mode vs web mode
+  const [desktopMode, setDesktopMode] = useState(true);
 
   // State for Terminal Visibility
   const [showTerminal, setShowTerminal] = useState(false);
@@ -30,6 +33,11 @@ function App() {
       }
       return nextState;
     });
+  }, []);
+
+  // Handler to toggle between desktop and web mode
+  const toggleDesktopMode = useCallback(() => {
+    setDesktopMode(prevState => !prevState);
   }, []);
 
   // Handler to toggle mobile menu
@@ -68,9 +76,42 @@ function App() {
     return <BootSequence onBootComplete={handleBootComplete} />;
   }
 
+  // ADDED: If in desktop mode, show only the desktop
+  if (desktopMode) {
+    return (
+      <>
+        <Desktop />
+        {/* Floating toggle button to switch to web mode */}
+        <button 
+          onClick={toggleDesktopMode}
+          style={{
+            position: 'fixed',
+            top: '10px',
+            right: '10px',
+            zIndex: 2000,
+            padding: '8px 12px',
+            backgroundColor: '#c0c0c0',
+            border: '2px outset #c0c0c0',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontFamily: 'sans-serif'
+          }}
+        >
+          🌐 Web Mode
+        </button>
+        
+        {/* --- Conditionally render the terminal OUTSIDE main flow --- */}
+        {showTerminal && (
+          <div className="terminal-container">
+            <DosTerminal onClose={toggleTerminal} shouldFocusOnOpen={focusTerminalNextOpen} />
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
-      <Desktop />
       <div className="App"> {/* Main layout container */}
 
         {/* --- Navigation Bar --- */}
@@ -107,6 +148,11 @@ function App() {
               <li><Link to="/about" className="tui-button enhanced-nav-btn">📋 About</Link></li>
               <li><Link to="/projects" className="tui-button enhanced-nav-btn">📁 Projects</Link></li>
               <li>
+                <button className="tui-button enhanced-nav-btn" onClick={toggleDesktopMode}>
+                  🖥️ Desktop
+                </button>
+              </li>
+              <li>
                 {/* Use stable toggleTerminal */}
                 <button className="tui-button enhanced-nav-btn terminal-btn" onClick={toggleTerminal} aria-pressed={showTerminal}>
                   {showTerminal ? '💻 CLI [ON]' : '💻 CLI [OFF]'}
@@ -121,6 +167,11 @@ function App() {
               <li><Link to="/" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>🏠 Home</Link></li>
               <li><Link to="/about" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>📋 About</Link></li>
               <li><Link to="/projects" className="tui-button mobile-link enhanced-mobile-link" onClick={closeMobileMenu}>📁 Projects</Link></li>
+              <li>
+                <button className="tui-button mobile-link enhanced-mobile-link" onClick={() => { toggleDesktopMode(); closeMobileMenu(); }}>
+                  🖥️ Desktop
+                </button>
+              </li>
               <li>
                 {/* Use stable toggleTerminalAndMenu */}
                 <button className="tui-button mobile-link enhanced-mobile-link" onClick={toggleTerminalAndMenu} aria-pressed={showTerminal}>
