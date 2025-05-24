@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  font-family: 'Consolas', 'Monaco', 'Lucida Console', 'Courier New', monospace;
 }
 
 .loading-spinner {

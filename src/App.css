@@ -4,12 +4,15 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
   background: rgba(192, 192, 192, 0.95);
   backdrop-filter: blur(2px);
   position: relative;
   z-index: 10;
-  color: #000000; /* Ensure black text */
+  color: #222222; /* Darker default text color */
 }
 
 /* Enhanced Main Content */
@@ -22,7 +25,8 @@
   border: 2px inset #c0c0c0;
   border-radius: 4px;
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-  color: #000000;
+  color: #1a1a1a; /* Darker, more readable text color */
+  font-weight: 400;
 }
 
 /* Style for the navigation logo */
@@ -65,7 +69,7 @@
   flex-direction: column;
   /* overflow: hidden; */ /* Let inline styles manage this based on state */
   color: #FFFFFF;
-  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace;
+  font-family: 'Consolas', 'Monaco', 'Lucida Console', 'Courier New', monospace;
   transition: width 0.2s ease-out, height 0.2s ease-out, left 0.2s ease-out, top 0.2s ease-out; /* Smooth transitions for size and position */
   width: 100%;
   height: 100%;
@@ -106,8 +110,8 @@
   border-bottom-color: #808080;
   border-right-color: #808080;
   padding: 0px 6px;
-  font-family: inherit; /* Use the DOS-like font */
-  font-size: 14px;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; /* Use modern font */
+  font-size: 12px;
   font-weight: bold;
   line-height: 1;
   cursor: pointer;
@@ -257,7 +261,7 @@
   border-bottom-color: #808080;
   border-right-color: #808080;
   padding: 0; /* Adjust padding as needed */
-  font-family: inherit;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px; /* Smaller for these icons */
   font-weight: bold;
   line-height: 1;
@@ -284,8 +288,8 @@
 /* ADDED: Global Blinking Cursor Style */
 .blinking-cursor-element {
   animation: blink-animation 1s step-end infinite;
-  font-family: 'Perfect DOS VGA', 'Lucida Console', 'Courier New', monospace; /* Ensure consistent font */
-  /* The color will be inherited from the parent paragraph or can be set if needed */
+  font-family: 'Consolas', 'Monaco', 'Lucida Console', 'Courier New', monospace; /* Ensure consistent monospace font */
+  color: #333333; /* Darker cursor color for better visibility */
 }
 
 @keyframes blink-animation {
@@ -329,12 +333,13 @@
 }
 
 .system-status {
-  font-family: 'Perfect DOS VGA', monospace;
+  font-family: 'Consolas', 'Monaco', 'Lucida Console', 'Courier New', monospace;
   background: rgba(0, 0, 0, 0.8);
   padding: 4px 8px;
   border-radius: 2px;
   border: 1px solid #00ff00;
   box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+  font-size: 12px;
 }
 
 .system-status span:first-child {
@@ -435,32 +440,18 @@
   background: #c0c0c0;
 }
 
-/* TUI CSS Override - Ensure proper contrast */
-.tui-panel, .tui-window .tui-panel {
-  background-color: #c0c0c0 !important;
-  color: #000000 !important;
+/* Global text improvements */
+p, h1, h2, h3, h4, h5, h6, span, div {
+  color: #2a2a2a; /* Darker default text */
 }
 
-.tui-window {
-  background-color: #c0c0c0 !important;
-  color: #000000 !important;
+.tui-panel, .tui-window {
+  color: #2a2a2a !important; /* Ensure window content has dark text */
 }
 
-.tui-title {
-  background: linear-gradient(90deg, #000080 0%, #0000ff 100%) !important;
-  color: #ffffff !important;
-}
-
-.tui-button {
-  color: #000000 !important;
-  background-color: #c0c0c0 !important;
-}
-
-/* Ensure all text elements have proper contrast */
-p, div, span, h1, h2, h3, h4, h5, h6, li, td, th, 
-.tui-panel p, .tui-panel div, .tui-panel span, 
-.tui-window p, .tui-window div, .tui-window span {
-  color: #000000 !important;
+.tui-panel p, .tui-window p {
+  color: #2a2a2a !important;
+  line-height: 1.6;
 }
 
 /* Mobile Enhancements */
