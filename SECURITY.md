@@ -17,10 +17,6 @@ We take the security of Weyland Corp Terminal Interface seriously. If you discov
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, please report security vulnerabilities to:
-- **Email**: security@example.com (replace with actual email)
-- **Security Advisory**: Use GitHub's [Private Security Advisory](https://github.com/robimdev/didactic-lamp/security/advisories/new)
-
 ### 📋 Information to Include
 
 When reporting a vulnerability, please include:
@@ -61,11 +57,6 @@ We appreciate security researchers who help keep our project safe:
 - **Responsible Disclosure**: We follow responsible disclosure practices
 - **Coordination**: We work with reporters to ensure proper fixes
 
-### 📞 Contact
-
-For non-security related issues, please use:
-- **General Issues**: [GitHub Issues](https://github.com/robimdev/didactic-lamp/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/robimdev/didactic-lamp/discussions)
 
 ---
 

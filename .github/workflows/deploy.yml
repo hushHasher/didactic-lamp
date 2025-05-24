@@ -6,13 +6,11 @@ on:
       - main
   workflow_dispatch:
 
-# Security permissions - principle of least privilege
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one deployment at a time
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -57,4 +55,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-            - name: Deploy to GitHub Pages        id: deployment        uses: actions/deploy-pages@v4 
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
