@@ -13,7 +13,7 @@ import './App.css'; // Main layout styles
 
 function App() {
   // ADDED: State for boot sequence
-  const [booting, setBooting] = useState(false);
+  const [booting, setBooting] = useState(true);
   
   // ADDED: State for desktop mode vs web mode
   const [desktopMode, setDesktopMode] = useState(true);
